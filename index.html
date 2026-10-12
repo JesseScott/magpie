@@ -14,40 +14,86 @@
 <body>
   <main>
     <header>
-      <h1>Magpie</h1>
+      <div class="bar">
+        <h1>Magpie</h1>
+        <button type="button" id="open-settings" class="link">Settings</button>
+      </div>
       <p id="dest" class="quiet"></p>
     </header>
 
-    <p id="hint" class="hint" hidden>
-      Nothing shared yet. In Chrome, open the menu, tap <strong>Share</strong>, then pick
-      <strong>Magpie</strong>. You can also fill the form in by hand.
-    </p>
+    <section id="settings-view" hidden>
+      <p id="welcome" class="hint" hidden>
+        Welcome to Magpie. Tell it where to save your clips. You can change this later from
+        <strong>Settings</strong>.
+      </p>
 
-    <form id="clip-form" autocomplete="off">
-      <label for="title">Title</label>
-      <input id="title" name="title" type="text" enterkeyhint="next">
+      <form id="settings-form" autocomplete="off">
+        <label for="s-vault">Vault name</label>
+        <input id="s-vault" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <p class="quiet small">
+          Exactly as Obsidian shows it (case matters). Leave blank to use whichever vault you
+          opened last.
+        </p>
 
-      <label for="url">Link</label>
-      <input id="url" name="url" type="url" inputmode="url" placeholder="https://">
+        <label for="s-folder">Folder</label>
+        <input id="s-folder" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <p class="quiet small">A folder inside the vault. Blank saves to the vault root.</p>
 
-      <label for="selection">Selected text</label>
-      <textarea id="selection" name="selection" rows="4" placeholder="Optional"></textarea>
+        <label for="s-tag">Tag added to every clip</label>
+        <input id="s-tag" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <p class="quiet small">Blank adds no automatic tag.</p>
 
-      <label for="tags">Extra tags <span class="quiet">(comma-separated)</span></label>
-      <input id="tags" name="tags" type="text" placeholder="recipes, to-read" enterkeyhint="next">
-      <p class="quiet small">Always tagged <code id="base-tag"></code>.</p>
+        <label for="s-source">Property name for the link</label>
+        <input id="s-source" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
 
-      <label for="note">Note</label>
-      <textarea id="note" name="note" rows="3" placeholder="Optional"></textarea>
+        <label for="s-date">Property name for the clip date</label>
+        <input id="s-date" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
 
-      <button type="submit" id="save">Save to Obsidian</button>
-      <button type="button" id="copy" class="secondary">Copy note as Markdown</button>
-      <p id="status" role="status" aria-live="polite"></p>
-    </form>
+        <label class="check" for="s-urlbody">
+          <input id="s-urlbody" type="checkbox">
+          <span>Also put the link at the top of the note</span>
+        </label>
 
-    <footer class="quiet small">
-      To install: Chrome menu, then <strong>Install app</strong> (or <strong>Add to Home screen</strong>).
-    </footer>
+        <button type="submit">Save settings</button>
+        <button type="button" id="cancel-settings" class="secondary">Cancel</button>
+        <button type="button" id="reset-settings" class="secondary">Reset to defaults</button>
+        <p id="settings-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <div id="clip-view">
+      <p id="hint" class="hint" hidden>
+        Nothing shared yet. In Chrome, open the menu, tap <strong>Share</strong>, then pick
+        <strong>Magpie</strong>. You can also fill the form in by hand.
+      </p>
+
+      <form id="clip-form" autocomplete="off">
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" enterkeyhint="next">
+
+        <label for="url">Link</label>
+        <input id="url" name="url" type="url" inputmode="url" placeholder="https://">
+
+        <label for="selection">Selected text</label>
+        <textarea id="selection" name="selection" rows="4" placeholder="Optional"></textarea>
+
+        <label for="tags">Extra tags <span class="quiet">(comma-separated)</span></label>
+        <input id="tags" name="tags" type="text" placeholder="recipes, to-read" enterkeyhint="next">
+        <p id="base-tag-line" class="quiet small">Always tagged <code id="base-tag"></code>.</p>
+
+        <label for="note">Note</label>
+        <textarea id="note" name="note" rows="3" placeholder="Optional"></textarea>
+
+        <button type="submit" id="save">Save to Obsidian</button>
+        <button type="button" id="copy" class="secondary">Copy note as Markdown</button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </form>
+
+      <footer class="quiet small">
+        To install: Chrome menu, then <strong>Install app</strong>. Pick Install, not Create
+        shortcut, or Magpie won't appear in the Share menu.
+      </footer>
+    </div>
   </main>
 
   <script src="clip.js"></script>

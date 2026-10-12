@@ -85,3 +85,46 @@ test('buildUri puts short notes in the link and long ones on the clipboard', () 
   assert.equal(long.clipboard, true);
   assert.equal(long.uri, 'obsidian://new?vault=randomized-rituals&file=Clippings%2FA%20B&clipboard');
 });
+
+test('normalizeSettings fills defaults and cleans values', () => {
+  assert.deepEqual(clip.normalizeSettings(null), clip.DEFAULT_SETTINGS);
+  const s = clip.normalizeSettings({
+    vault: '  My Vault ',
+    folder: '\\Web\\\\Clips/../x/',
+    baseTag: '#Read Later',
+    sourceKey: 'not valid!',
+    dateKey: 'created',
+    urlInBody: false,
+  });
+  assert.equal(s.vault, 'My Vault');
+  assert.equal(s.folder, 'Web/Clips/x');
+  assert.equal(s.baseTag, 'Read-Later');
+  assert.equal(s.sourceKey, 'source');
+  assert.equal(s.dateKey, 'created');
+  assert.equal(s.urlInBody, false);
+});
+
+test('normalizeSettings lets the folder and base tag be blank on purpose', () => {
+  const s = clip.normalizeSettings({ folder: '', baseTag: '' });
+  assert.equal(s.folder, '');
+  assert.equal(s.baseTag, '');
+  assert.deepEqual(clip.parseTags('a, b', s.baseTag), ['a', 'b']);
+});
+
+test('buildNote honours custom property names, no tags, and a link-free body', () => {
+  const note = clip.buildNote(
+    { title: 'T', url: 'https://example.com', selection: '', note: '', tags: [], date: '2026-10-11' },
+    { sourceKey: 'url', dateKey: 'created', urlInBody: false }
+  );
+  assert.equal(
+    note,
+    ['---', 'title: "T"', 'url: "https://example.com"', 'created: 2026-10-11', '---', '', '', ''].join('\n')
+  );
+});
+
+test('buildUri omits a blank vault and a blank folder', () => {
+  const r = clip.buildUri({ vault: '', folder: '', fileName: 'A', note: 'x', maxLength: 8000 });
+  assert.equal(r.uri, 'obsidian://new?file=A&content=x');
+  const long = clip.buildUri({ vault: '', folder: 'F', fileName: 'A', note: 'x'.repeat(9000), maxLength: 8000 });
+  assert.equal(long.uri, 'obsidian://new?file=F%2FA&clipboard');
+});
