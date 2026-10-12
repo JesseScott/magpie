@@ -2,6 +2,8 @@
 
 # magpie
 
+[![Latest release](https://img.shields.io/github/v/release/JesseScott/magpie?label=version&color=6b3fa0)](https://github.com/JesseScott/magpie/releases/latest)
+
 An Android web clipper for Obsidian.
 
 Chrome on Android can't run the Obsidian Web Clipper extension. Magpie is a small installable web app (a PWA) that adds itself to Chrome's Share menu. Share a page or a text selection, tap **Save to Obsidian**, and a note lands in your vault.
