@@ -112,3 +112,7 @@ The version lives in `version.js` and is shown at the bottom of the clip screen 
 ## License
 
 MIT
+
+## Support
+
+Magpie is free. If it's useful to you, you can [buy me a coffee on Ko-fi](https://ko-fi.com/jessescott).
