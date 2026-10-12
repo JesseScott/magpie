@@ -77,8 +77,9 @@ Chrome only treats `localhost` and HTTPS as installable, so test sharing on a ph
 The version lives in `version.js` and is shown at the bottom of the clip screen and of Settings. `package.json` must carry the same number (a test checks). The service worker names its cache after the version, so a new version replaces the old cache on its own.
 
 1. Bump the version in `version.js` and `package.json`. Use a patch bump for fixes and a minor bump for new settings or features.
-2. Merge to `main` and wait for the Pages deploy.
-3. On the phone, open Magpie, close it fully, and open it again. The first launch after a deploy still shows the old version while the new one downloads, so the second launch shows the new number.
+2. Open the pull request. CI fails a pull request that changes any served file (`index.html`, `app.js`, `clip.js`, `style.css`, `sw.js`, `manifest.webmanifest`, `icons/`) without raising the version. Run `npm run check:version` locally to see what CI will say. Changes to docs, tests and workflows need no bump.
+3. Merge to `main` and wait for the Pages deploy. A workflow then tags `v<version>` and publishes a GitHub release with generated notes. To release the current version by hand, run the **Release** workflow from the Actions tab.
+4. On the phone, open Magpie, close it fully, and open it again. The first launch after a deploy still shows the old version while the new one downloads, so the second launch shows the new number.
 
 ## Files
 

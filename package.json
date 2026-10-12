@@ -5,6 +5,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "check:version": "node scripts/version-check.js origin/main"
   }
 }

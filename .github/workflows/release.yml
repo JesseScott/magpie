@@ -1,0 +1,40 @@
+name: Release
+
+# Tags and publishes a GitHub release whenever version.js changes on main, so
+# the version shown in the app maps to a point in git history. Run it by hand
+# from the Actions tab to release the current version if it has no release yet.
+on:
+  push:
+    branches: [main]
+    paths: [version.js]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests
+        run: npm test
+      - name: Create the release if this version has none
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -e "const s={self:{}};require('vm').runInNewContext(require('fs').readFileSync('version.js','utf8'),s);process.stdout.write(s.self.MAGPIE_VERSION)")
+          tag="v${version}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "$tag already has a release"
+            exit 0
+          fi
+          gh release create "$tag" --target "$GITHUB_SHA" --title "Magpie $tag" --generate-notes
