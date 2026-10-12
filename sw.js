@@ -1,7 +1,7 @@
 'use strict';
 
 // Bump CACHE when shipping changes so installed copies pick up new files.
-var CACHE = 'magpie-v2';
+var CACHE = 'magpie-v3';
 var SHELL = [
   './',
   'index.html',

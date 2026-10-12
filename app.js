@@ -3,23 +3,120 @@
 
   var clip = window.MagpieClip;
 
-  // The vault name is fixed. Change these if the vault or folder ever move.
-  var CONFIG = {
-    vault: 'randomized-rituals',
-    folder: 'Clippings',
-    baseTag: 'clippings',
-    maxUriLength: 8000,
-  };
+  var STORE_KEY = 'magpie.settings.v1';
+  var MAX_URI_LENGTH = 8000;
+
+  var settings = clip.normalizeSettings(null);
 
   var $ = function (id) {
     return document.getElementById(id);
   };
 
-  function setStatus(message, isError) {
-    var el = $('status');
+  // ---- Settings storage -------------------------------------------------
+
+  // Returns true if settings were found. Storage can be unavailable (private
+  // windows, blocked site data), in which case Magpie still works for the
+  // session and asks again next time.
+  function loadSettings() {
+    try {
+      var raw = window.localStorage.getItem(STORE_KEY);
+      if (raw) {
+        settings = clip.normalizeSettings(JSON.parse(raw));
+        return true;
+      }
+    } catch (e) {
+      /* fall through to defaults */
+    }
+    return false;
+  }
+
+  function persistSettings() {
+    try {
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(settings));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ---- Views ------------------------------------------------------------
+
+  function showView(name) {
+    $('settings-view').hidden = name !== 'settings';
+    $('clip-view').hidden = name !== 'clip';
+    $('open-settings').hidden = name === 'settings';
+  }
+
+  function renderDestination() {
+    var vault = settings.vault || 'last-used vault';
+    $('dest').textContent = settings.folder ? vault + ' / ' + settings.folder : vault;
+    $('base-tag').textContent = settings.baseTag;
+    $('base-tag-line').hidden = !settings.baseTag;
+  }
+
+  function fillSettingsForm(s) {
+    $('s-vault').value = s.vault;
+    $('s-folder').value = s.folder;
+    $('s-tag').value = s.baseTag;
+    $('s-source').value = s.sourceKey;
+    $('s-date').value = s.dateKey;
+    $('s-urlbody').checked = s.urlInBody;
+  }
+
+  function readSettingsForm() {
+    return clip.normalizeSettings({
+      vault: $('s-vault').value,
+      folder: $('s-folder').value,
+      baseTag: $('s-tag').value,
+      sourceKey: $('s-source').value,
+      dateKey: $('s-date').value,
+      urlInBody: $('s-urlbody').checked,
+    });
+  }
+
+  function setStatus(id, message, isError) {
+    var el = $(id);
     el.textContent = message;
     el.className = isError ? 'error' : '';
   }
+
+  var firstRun = false;
+
+  function openSettings() {
+    fillSettingsForm(settings);
+    setStatus('settings-status', '');
+    $('welcome').hidden = !firstRun;
+    $('cancel-settings').hidden = firstRun;
+    showView('settings');
+    window.scrollTo(0, 0);
+  }
+
+  function closeSettings() {
+    renderDestination();
+    showView('clip');
+  }
+
+  function saveSettingsForm(event) {
+    event.preventDefault();
+    settings = readSettingsForm();
+    var stored = persistSettings();
+    firstRun = false;
+    closeSettings();
+    if (!stored) {
+      setStatus(
+        'status',
+        "Couldn't store settings on this device, so they last until you close Magpie.",
+        true
+      );
+    }
+  }
+
+  function resetSettings() {
+    fillSettingsForm(clip.normalizeSettings(null));
+    setStatus('settings-status', 'Defaults filled in. Tap Save settings to keep them.');
+  }
+
+  // ---- Clipping ---------------------------------------------------------
 
   function currentClip() {
     var date = clip.localDate();
@@ -29,13 +126,9 @@
       url: $('url').value.trim(),
       selection: $('selection').value.trim(),
       note: $('note').value.trim(),
-      tags: clip.parseTags($('tags').value, CONFIG.baseTag),
+      tags: clip.parseTags($('tags').value, settings.baseTag),
       date: date,
     };
-  }
-
-  function fileNameFor(c) {
-    return clip.sanitizeFileName(c.title, 'Clip ' + c.date);
   }
 
   function copyText(text) {
@@ -48,17 +141,17 @@
   function save(event) {
     event.preventDefault();
     var c = currentClip();
-    var note = clip.buildNote(c);
+    var note = clip.buildNote(c, settings);
     var result = clip.buildUri({
-      vault: CONFIG.vault,
-      folder: CONFIG.folder,
-      fileName: fileNameFor(c),
+      vault: settings.vault,
+      folder: settings.folder,
+      fileName: clip.sanitizeFileName(c.title, 'Clip ' + c.date),
       note: note,
-      maxLength: CONFIG.maxUriLength,
+      maxLength: MAX_URI_LENGTH,
     });
 
     function launch() {
-      setStatus('Sent to Obsidian. If nothing opened, check that Obsidian is installed.');
+      setStatus('status', 'Sent to Obsidian. If nothing opened, check that Obsidian is installed.');
       window.location.href = result.uri;
     }
 
@@ -69,26 +162,24 @@
     // Long notes: put the Markdown on the clipboard, then ask Obsidian to
     // create the note from it.
     copyText(note).then(launch, function () {
-      setStatus('This clip is too long to send in a link and the clipboard is blocked.', true);
+      setStatus('status', 'This clip is too long to send in a link and the clipboard is blocked.', true);
     });
   }
 
   function copyNote() {
-    var note = clip.buildNote(currentClip());
-    copyText(note).then(
+    copyText(clip.buildNote(currentClip(), settings)).then(
       function () {
-        setStatus('Copied. Paste it into a new note.');
+        setStatus('status', 'Copied. Paste it into a new note.');
       },
       function () {
-        setStatus('Could not access the clipboard.', true);
+        setStatus('status', 'Could not access the clipboard.', true);
       }
     );
   }
 
-  function init() {
-    $('dest').textContent = CONFIG.vault + ' / ' + CONFIG.folder;
-    $('base-tag').textContent = CONFIG.baseTag;
+  // ---- Start up ---------------------------------------------------------
 
+  function init() {
     var share = clip.parseShare(window.location.search);
     $('title').value = clip.defaultTitle(share);
     $('url').value = share.url;
@@ -97,6 +188,17 @@
 
     $('clip-form').addEventListener('submit', save);
     $('copy').addEventListener('click', copyNote);
+    $('open-settings').addEventListener('click', openSettings);
+    $('cancel-settings').addEventListener('click', closeSettings);
+    $('reset-settings').addEventListener('click', resetSettings);
+    $('settings-form').addEventListener('submit', saveSettingsForm);
+
+    // First run: ask where clips go before anything else. A page that was
+    // just shared stays filled in behind the settings screen.
+    firstRun = !loadSettings();
+    renderDestination();
+    if (firstRun) openSettings();
+    else showView('clip');
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {

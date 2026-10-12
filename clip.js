@@ -12,6 +12,16 @@
 
   const enc = encodeURIComponent;
 
+  // A blank vault means "whichever vault Obsidian opened last".
+  const DEFAULT_SETTINGS = {
+    vault: '',
+    folder: 'Clippings',
+    baseTag: 'clippings',
+    sourceKey: 'source',
+    dateKey: 'clipped',
+    urlInBody: true,
+  };
+
   function localDate(d) {
     d = d || new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -63,7 +73,20 @@
     return s || fallback;
   }
 
-  // The base tag is always first; extras are comma- or newline-separated.
+  // One tag: no leading #, spaces become dashes, characters Obsidian
+  // doesn't allow in tags become dashes.
+  function cleanTag(piece) {
+    return String(piece || '')
+      .trim()
+      .replace(/^#+/, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^\p{L}\p{N}_\-\/]/gu, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  // The base tag (if any) is always first; extras are comma- or
+  // newline-separated.
   function parseTags(input, baseTag) {
     const seen = new Set();
     const tags = [];
@@ -72,33 +95,65 @@
       seen.add(t.toLowerCase());
       tags.push(t);
     };
-    add(baseTag);
+    add(cleanTag(baseTag));
     String(input || '')
       .split(/[,\n]/)
       .forEach(function (piece) {
-        const t = piece
-          .trim()
-          .replace(/^#+/, '')
-          .replace(/\s+/g, '-')
-          .replace(/[^\p{L}\p{N}_\-\/]/gu, '-')
-          .replace(/-{2,}/g, '-')
-          .replace(/^-+|-+$/g, '');
-        add(t);
+        add(cleanTag(piece));
       });
     return tags;
   }
 
-  function buildNote(clip) {
+  // A folder path inside the vault: forward slashes, no empty or dot
+  // segments, no characters Obsidian rejects. Blank means the vault root.
+  function cleanFolder(value) {
+    return String(value || '')
+      .replace(/\\/g, '/')
+      .split('/')
+      .map(function (part) {
+        return part.replace(/[:*?"<>|#^\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+      })
+      .filter(function (part) {
+        return part && part !== '.' && part !== '..';
+      })
+      .join('/');
+  }
+
+  // A frontmatter property name. Kept to plain characters so it needs no
+  // YAML quoting.
+  function cleanKey(value, fallback) {
+    const s = String(value || '').trim();
+    return /^[A-Za-z_][A-Za-z0-9_-]*$/.test(s) ? s : fallback;
+  }
+
+  function normalizeSettings(raw) {
+    raw = raw && typeof raw === 'object' ? raw : {};
+    const isText = (k) => typeof raw[k] === 'string';
+    return {
+      vault: isText('vault') ? raw.vault.trim() : DEFAULT_SETTINGS.vault,
+      folder: isText('folder') ? cleanFolder(raw.folder) : DEFAULT_SETTINGS.folder,
+      baseTag: isText('baseTag') ? cleanTag(raw.baseTag) : DEFAULT_SETTINGS.baseTag,
+      sourceKey: cleanKey(raw.sourceKey, DEFAULT_SETTINGS.sourceKey),
+      dateKey: cleanKey(raw.dateKey, DEFAULT_SETTINGS.dateKey),
+      urlInBody: typeof raw.urlInBody === 'boolean' ? raw.urlInBody : DEFAULT_SETTINGS.urlInBody,
+    };
+  }
+
+  function buildNote(clip, options) {
+    const o = normalizeSettings(options);
     const lines = ['---', 'title: ' + JSON.stringify(clip.title)];
-    if (clip.url) lines.push('source: ' + JSON.stringify(clip.url));
-    lines.push('clipped: ' + clip.date, 'tags:');
-    clip.tags.forEach(function (t) {
-      lines.push('  - ' + t);
-    });
+    if (clip.url) lines.push(o.sourceKey + ': ' + JSON.stringify(clip.url));
+    lines.push(o.dateKey + ': ' + clip.date);
+    if (clip.tags.length) {
+      lines.push('tags:');
+      clip.tags.forEach(function (t) {
+        lines.push('  - ' + t);
+      });
+    }
     lines.push('---', '');
 
     const body = [];
-    if (clip.url) body.push(clip.url);
+    if (clip.url && o.urlInBody) body.push(clip.url);
     if (clip.selection) {
       body.push(
         clip.selection
@@ -116,20 +171,26 @@
   // Short notes travel inside the link. Long ones go through the clipboard
   // so the link stays under what Android will hand to another app.
   function buildUri(opts) {
+    const path = opts.folder ? opts.folder + '/' + opts.fileName : opts.fileName;
     const base =
-      'obsidian://new?vault=' + enc(opts.vault) + '&file=' + enc(opts.folder + '/' + opts.fileName);
+      'obsidian://new?' + (opts.vault ? 'vault=' + enc(opts.vault) + '&' : '') + 'file=' + enc(path);
     const full = base + '&content=' + enc(opts.note);
     if (full.length <= opts.maxLength) return { uri: full, clipboard: false };
     return { uri: base + '&clipboard', clipboard: true };
   }
 
   return {
+    DEFAULT_SETTINGS: DEFAULT_SETTINGS,
     localDate: localDate,
     extractUrl: extractUrl,
     parseShare: parseShare,
     defaultTitle: defaultTitle,
     sanitizeFileName: sanitizeFileName,
+    cleanTag: cleanTag,
     parseTags: parseTags,
+    cleanFolder: cleanFolder,
+    cleanKey: cleanKey,
+    normalizeSettings: normalizeSettings,
     buildNote: buildNote,
     buildUri: buildUri,
   };

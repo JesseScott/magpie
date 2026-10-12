@@ -6,7 +6,7 @@ Chrome on Android can't run the Obsidian Web Clipper extension. Magpie is a smal
 
 ## What a clip looks like
 
-Notes are created in `Clippings/` in the `randomized-rituals` vault:
+By default, notes are created in a `Clippings` folder in your vault:
 
 ```markdown
 ---
@@ -25,7 +25,7 @@ https://example.com/page
 Your note, if any
 ```
 
-`clippings` is always applied. The share screen has an optional field for extra tags, which are written to the same list.
+`clippings` is applied to every clip. The share screen has an optional field for extra tags, which are written to the same list. The folder, tag and property names are all configurable (see Settings).
 
 ## Install
 
@@ -34,6 +34,27 @@ Your note, if any
 3. Share any page from Chrome and pick **Magpie**.
 
 The app is served from `https://jessescott.github.io/magpie/`. All paths in the code are relative so it works under that `/magpie/` subpath.
+
+Choose **Install**, not **Create shortcut**. A shortcut is only a bookmark and won't appear in the Share menu.
+
+## Settings
+
+The first time you open Magpie it asks where to save clips. Open **Settings** any time to change it.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Vault name | blank | Exactly as Obsidian shows it (case matters). Blank uses whichever vault you opened last. |
+| Folder | `Clippings` | A folder inside the vault. Blank saves to the vault root. |
+| Tag added to every clip | `clippings` | Blank adds no automatic tag. |
+| Property name for the link | `source` | Letters, digits, `_` and `-`. |
+| Property name for the clip date | `clipped` | Same rule. |
+| Link at the top of the note | on | The link is always in the frontmatter. |
+
+Settings are stored on your device and survive closing the app.
+
+## Privacy
+
+Everything runs on your phone. Magpie has no server, no analytics and no account, and nothing you clip is sent anywhere except to Obsidian on the same device. The only network requests are the ones that load the app itself.
 
 ## How it works
 
@@ -50,7 +71,6 @@ python -m http.server 8000
 
 Chrome only treats `localhost` and HTTPS as installable, so test sharing on a phone from the GitHub Pages deployment. After changing cached files, bump `CACHE` in `sw.js` so installed copies update.
 
-To change the vault or folder, edit `CONFIG` at the top of `app.js`.
 
 ## Files
 
