@@ -69,8 +69,16 @@ npm test            # unit tests for clip.js, uses Node's built-in runner
 python -m http.server 8000
 ```
 
-Chrome only treats `localhost` and HTTPS as installable, so test sharing on a phone from the GitHub Pages deployment. After changing cached files, bump `CACHE` in `sw.js` so installed copies update.
+Chrome only treats `localhost` and HTTPS as installable, so test sharing on a phone from the GitHub Pages deployment. After changing any served file, bump the version (see Releasing) so installed copies update.
 
+
+## Releasing
+
+The version lives in `version.js` and is shown at the bottom of the clip screen and of Settings. `package.json` must carry the same number (a test checks). The service worker names its cache after the version, so a new version replaces the old cache on its own.
+
+1. Bump the version in `version.js` and `package.json`. Use a patch bump for fixes and a minor bump for new settings or features.
+2. Merge to `main` and wait for the Pages deploy.
+3. On the phone, open Magpie, close it fully, and open it again. The first launch after a deploy still shows the old version while the new one downloads, so the second launch shows the new number.
 
 ## Files
 
@@ -79,6 +87,7 @@ Chrome only treats `localhost` and HTTPS as installable, so test sharing on a ph
 | `index.html`, `style.css`, `app.js` | The share screen |
 | `clip.js` | Parsing the share, building the note and the Obsidian link |
 | `manifest.webmanifest` | Install metadata and the share target |
+| `version.js` | The app version, shown in the UI and used to name the cache |
 | `sw.js` | Offline cache, required for installing |
 | `test/` | Tests for `clip.js` |
 
