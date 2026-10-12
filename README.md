@@ -1,3 +1,5 @@
+<img src="icons/icon-512.png" alt="Magpie app icon: a white magpie silhouette on a purple square" width="96" height="96" align="right">
+
 # magpie
 
 An Android web clipper for Obsidian.
@@ -29,11 +31,11 @@ Your note, if any
 
 ## Install
 
-1. In Chrome on Android, open the hosted app (GitHub Pages URL below).
+1. In Chrome on Android, open **<https://jessescott.github.io/magpie/>**.
 2. Chrome menu, then **Install app**.
 3. Share any page from Chrome and pick **Magpie**.
 
-The app is served from `https://jessescott.github.io/magpie/`. All paths in the code are relative so it works under that `/magpie/` subpath.
+All paths in the code are relative, so the app works under the `/magpie/` subpath it is served from.
 
 Choose **Install**, not **Create shortcut**. A shortcut is only a bookmark and won't appear in the Share menu.
 
