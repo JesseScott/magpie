@@ -1,0 +1,24 @@
+# Weekly dependency updates. Every pull request is assigned to the maintainer.
+# The app itself has no runtime dependencies; npm only covers the dev tools
+# (Playwright), and github-actions covers the actions the workflows use.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: America/Vancouver
+    assignees:
+      - JesseScott
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: America/Vancouver
+    assignees:
+      - JesseScott
