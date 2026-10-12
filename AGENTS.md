@@ -62,7 +62,3 @@ Run `npm test` before every commit. Run `npm run test:e2e` when you touch `index
 - Say plainly what you couldn't test. Workflows, Dependabot config and the Android share sheet only run on GitHub or a real phone.
 - In sandboxes where `gh issue create` and `gh pr create` fail (GraphQL blocked), use the REST API: `gh api repos/JesseScott/magpie/issues --method POST --input body.json`.
 - Don't commit `node_modules/`, `playwright-report/` or `test-results/`. They are ignored.
-
-## Not built yet
-
-Phase 2: full-article clipping through a serverless function (Readability and Turndown). A shared server would see what people clip and could be abused as an open proxy, so it needs rate limits, no logging and blocking of private addresses, or each user deploying their own. Don't start it without an issue.
