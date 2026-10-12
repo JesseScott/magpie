@@ -1,0 +1,144 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1c1b22;
+  --quiet: #6b6878;
+  --line: #d6d3e0;
+  --field: #f6f5fa;
+  --accent: #7c3aed;
+  --accent-fg: #ffffff;
+  --error: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17161c;
+    --fg: #ececf1;
+    --quiet: #9a97a8;
+    --line: #34323f;
+    --field: #211f29;
+    --accent: #a78bfa;
+    --accent-fg: #17161c;
+    --error: #f97066;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+
+header {
+  margin-bottom: 8px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.quiet {
+  color: var(--quiet);
+}
+
+.small {
+  font-size: 0.875rem;
+  margin: 4px 0 0;
+}
+
+.hint {
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+label {
+  display: block;
+  margin: 16px 0 6px;
+  font-weight: 600;
+}
+
+label .quiet {
+  font-weight: 400;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 12px;
+  font: inherit; /* 16px keeps Chrome from zooming on focus */
+  color: inherit;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-fg);
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+}
+
+button.secondary {
+  margin-top: 8px;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--line);
+  font-weight: 500;
+}
+
+button:active {
+  opacity: 0.85;
+}
+
+#status {
+  min-height: 1.45em;
+  margin: 12px 0 0;
+}
+
+#status.error {
+  color: var(--error);
+}
+
+footer {
+  margin-top: 24px;
+}
+
+code {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 0.9em;
+}

@@ -147,3 +147,16 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Magpie
+# Cloudflare Worker (Phase 2)
+.wrangler/
+.dev.vars
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+Desktop.ini
+.DS_Store
