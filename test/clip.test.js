@@ -128,3 +128,18 @@ test('buildUri omits a blank vault and a blank folder', () => {
   const long = clip.buildUri({ vault: '', folder: 'F', fileName: 'A', note: 'x'.repeat(9000), maxLength: 8000 });
   assert.equal(long.uri, 'obsidian://new?file=F%2FA&clipboard');
 });
+
+test('the always-on tags setting takes a comma-separated list', () => {
+  assert.equal(clip.normalizeSettings({ baseTag: 'clippings, magpie' }).baseTag, 'clippings, magpie');
+  assert.equal(
+    clip.normalizeSettings({ baseTag: '#Clippings,  magpie ,, my tag, clippings' }).baseTag,
+    'Clippings, magpie, my-tag'
+  );
+  assert.equal(clip.normalizeSettings({ baseTag: ' , ' }).baseTag, '');
+});
+
+test('parseTags puts always-on tags first, then extras, without duplicates', () => {
+  assert.deepEqual(clip.parseTags('extra, magpie', 'clippings, magpie'), ['clippings', 'magpie', 'extra']);
+  assert.deepEqual(clip.parseTags('', 'clippings, magpie'), ['clippings', 'magpie']);
+  assert.deepEqual(clip.parseTags('a', ''), ['a']);
+});

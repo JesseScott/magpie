@@ -39,9 +39,9 @@
         <input id="s-folder" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
         <p class="quiet small">A folder inside the vault. Blank saves to the vault root.</p>
 
-        <label for="s-tag">Tag added to every clip</label>
+        <label for="s-tag">Tags added to every clip</label>
         <input id="s-tag" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
-        <p class="quiet small">Blank adds no automatic tag.</p>
+        <p class="quiet small">Comma-separated, for example <code>clippings, magpie</code>. Blank adds no automatic tags.</p>
 
         <label for="s-source">Property name for the link</label>
         <input id="s-source" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
@@ -79,7 +79,7 @@
 
         <label for="tags">Extra tags <span class="quiet">(comma-separated)</span></label>
         <input id="tags" name="tags" type="text" placeholder="recipes, to-read" enterkeyhint="next">
-        <p id="base-tag-line" class="quiet small">Always tagged <code id="base-tag"></code>.</p>
+        <p id="base-tag-line" class="quiet small">Always tagged: <code id="base-tag"></code>.</p>
 
         <label for="note">Note</label>
         <textarea id="note" name="note" rows="3" placeholder="Optional"></textarea>

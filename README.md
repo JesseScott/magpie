@@ -45,7 +45,7 @@ The first time you open Magpie it asks where to save clips. Open **Settings** an
 | --- | --- | --- |
 | Vault name | blank | Exactly as Obsidian shows it (case matters). Blank uses whichever vault you opened last. |
 | Folder | `Clippings` | A folder inside the vault. Blank saves to the vault root. |
-| Tag added to every clip | `clippings` | Blank adds no automatic tag. |
+| Tags added to every clip | `clippings` | Comma-separated, for example `clippings, magpie`. Blank adds no automatic tags. |
 | Property name for the link | `source` | Letters, digits, `_` and `-`. |
 | Property name for the clip date | `clipped` | Same rule. |
 | Link at the top of the note | on | The link is always in the frontmatter. |

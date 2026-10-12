@@ -85,23 +85,26 @@
       .replace(/^-+|-+$/g, '');
   }
 
-  // The base tag (if any) is always first; extras are comma- or
-  // newline-separated.
-  function parseTags(input, baseTag) {
+  // A comma- or newline-separated list of tags, cleaned and de-duplicated
+  // (ignoring case). Blank pieces are dropped.
+  function cleanTagList(input) {
     const seen = new Set();
     const tags = [];
-    const add = (t) => {
-      if (!t || seen.has(t.toLowerCase())) return;
-      seen.add(t.toLowerCase());
-      tags.push(t);
-    };
-    add(cleanTag(baseTag));
     String(input || '')
       .split(/[,\n]/)
       .forEach(function (piece) {
-        add(cleanTag(piece));
+        const t = cleanTag(piece);
+        if (!t || seen.has(t.toLowerCase())) return;
+        seen.add(t.toLowerCase());
+        tags.push(t);
       });
     return tags;
+  }
+
+  // The always-on tags (a comma-separated list, possibly blank) come first,
+  // then the extras typed for this clip.
+  function parseTags(input, baseTags) {
+    return cleanTagList(String(baseTags || '') + ',' + String(input || ''));
   }
 
   // A folder path inside the vault: forward slashes, no empty or dot
@@ -132,7 +135,7 @@
     return {
       vault: isText('vault') ? raw.vault.trim() : DEFAULT_SETTINGS.vault,
       folder: isText('folder') ? cleanFolder(raw.folder) : DEFAULT_SETTINGS.folder,
-      baseTag: isText('baseTag') ? cleanTag(raw.baseTag) : DEFAULT_SETTINGS.baseTag,
+      baseTag: isText('baseTag') ? cleanTagList(raw.baseTag).join(', ') : DEFAULT_SETTINGS.baseTag,
       sourceKey: cleanKey(raw.sourceKey, DEFAULT_SETTINGS.sourceKey),
       dateKey: cleanKey(raw.dateKey, DEFAULT_SETTINGS.dateKey),
       urlInBody: typeof raw.urlInBody === 'boolean' ? raw.urlInBody : DEFAULT_SETTINGS.urlInBody,
@@ -187,6 +190,7 @@
     defaultTitle: defaultTitle,
     sanitizeFileName: sanitizeFileName,
     cleanTag: cleanTag,
+    cleanTagList: cleanTagList,
     parseTags: parseTags,
     cleanFolder: cleanFolder,
     cleanKey: cleanKey,
