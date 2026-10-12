@@ -64,13 +64,26 @@ No server and no build step. Phase 2 (full-article extraction through a Cloudfla
 
 ## Develop
 
+Magpie has no build step and no runtime dependencies. Tests come in three layers:
+
 ```sh
-npm test            # unit tests for clip.js, uses Node's built-in runner
-python -m http.server 8000
+npm test               # unit and static checks, Node's built-in runner, nothing to install
+npm run test:e2e       # browser smoke tests in Chromium, see below
+npm run check:version  # would CI ask for a version bump on this branch?
 ```
 
-Chrome only treats `localhost` and HTTPS as installable, so test sharing on a phone from the GitHub Pages deployment. After changing any served file, bump the version (see Releasing) so installed copies update.
+`npm test` covers `clip.js` and checks that the files GitHub Pages serves agree with each other (manifest, icons, service worker cache list).
 
+`npm run test:e2e` drives the real screen in Chromium on a phone-sized viewport: first run, settings, tags, offline, and the exact `obsidian://` link the app builds. Install its dependencies once:
+
+```sh
+npm ci
+npx playwright install chromium
+```
+
+The tests serve the repo under `/magpie/`, like GitHub Pages, so a path that only works at the site root fails too. They can't cover the Android share sheet, installing the app, or the handoff into Obsidian. [`docs/manual-checklist.md`](docs/manual-checklist.md) lists those for a phone check before a release.
+
+Chrome only treats `localhost` and HTTPS as installable, so test sharing on a phone from the GitHub Pages deployment. After changing any served file, bump the version (see Releasing) so installed copies update.
 
 ## Releasing
 
@@ -90,7 +103,9 @@ The version lives in `version.js` and is shown at the bottom of the clip screen 
 | `manifest.webmanifest` | Install metadata and the share target |
 | `version.js` | The app version, shown in the UI and used to name the cache |
 | `sw.js` | Offline cache, required for installing |
-| `test/` | Tests for `clip.js` |
+| `test/` | Unit and static tests (`npm test`) |
+| `e2e/` | Browser smoke tests and the small server they use (`npm run test:e2e`) |
+| `docs/` | Manual checklist for what the automated tests can't cover |
 
 ## License
 

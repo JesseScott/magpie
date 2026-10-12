@@ -138,6 +138,13 @@
     return Promise.reject(new Error('Clipboard is not available'));
   }
 
+  // Opens an obsidian:// link. Browser tests can't observe a navigation to a
+  // custom scheme, so they replace this by defining window.__magpieOpen.
+  function openObsidian(uri) {
+    if (typeof window.__magpieOpen === 'function') window.__magpieOpen(uri);
+    else window.location.href = uri;
+  }
+
   function save(event) {
     event.preventDefault();
     var c = currentClip();
@@ -152,7 +159,7 @@
 
     function launch() {
       setStatus('status', 'Sent to Obsidian. If nothing opened, check that Obsidian is installed.');
-      window.location.href = result.uri;
+      openObsidian(result.uri);
     }
 
     if (!result.clipboard) {
