@@ -187,3 +187,8 @@ label.check input {
 [hidden] {
   display: none !important;
 }
+
+.version {
+  margin-top: 24px;
+  text-align: center;
+}

@@ -13,7 +13,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const exists = (file) => fs.existsSync(path.join(root, file));
 
 test('JavaScript files parse', () => {
-  ['app.js', 'clip.js', 'sw.js'].forEach((file) => {
+  ['app.js', 'clip.js', 'sw.js', 'version.js'].forEach((file) => {
     assert.doesNotThrow(() => new vm.Script(read(file), { filename: file }), file);
   });
 });
@@ -64,8 +64,42 @@ test('service worker pre-caches only files that exist, and every script it needs
     const file = entry === './' ? 'index.html' : entry;
     assert.ok(exists(file), 'sw.js caches a missing file: ' + entry);
   });
-  ['index.html', 'app.js', 'clip.js', 'style.css', 'manifest.webmanifest'].forEach((needed) => {
-    assert.ok(shell.includes(needed), 'sw.js does not cache ' + needed);
-  });
-  assert.match(sw, /var CACHE = 'magpie-v\d+';/, 'CACHE should look like magpie-vN');
+  ['index.html', 'app.js', 'clip.js', 'version.js', 'style.css', 'manifest.webmanifest'].forEach(
+    (needed) => {
+      assert.ok(shell.includes(needed), 'sw.js does not cache ' + needed);
+    }
+  );
+});
+
+test('the cache name comes from the app version, with no hand-bumped name left', () => {
+  const sw = read('sw.js');
+  assert.match(sw, /importScripts\('version\.js'\)/);
+  assert.match(sw, /var CACHE = 'magpie-v' \+ self\.MAGPIE_VERSION;/);
+  assert.doesNotMatch(sw, /magpie-v\d/, 'a hard-coded cache name is back in sw.js');
+});
+
+test('installing bypasses the HTTP cache so a new cache never holds old files', () => {
+  const sw = read('sw.js');
+  assert.match(sw, /cache: 'reload'/);
+  assert.match(sw, /cache: 'no-cache'/);
+});
+
+function appVersion() {
+  const sandbox = { self: {} };
+  vm.runInNewContext(read('version.js'), sandbox, { filename: 'version.js' });
+  return sandbox.self.MAGPIE_VERSION;
+}
+
+test('the app version is a semantic version and matches package.json', () => {
+  const version = appVersion();
+  assert.match(version, /^\d+\.\d+\.\d+$/);
+  assert.equal(JSON.parse(read('package.json')).version, version);
+});
+
+test('index.html loads version.js before the app and has places to show it', () => {
+  const html = read('index.html');
+  const order = ['version.js', 'clip.js', 'app.js'].map((f) => html.indexOf('src="' + f + '"'));
+  assert.ok(order.every((i) => i >= 0), 'a script tag is missing');
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'scripts are out of order');
+  assert.ok((html.match(/class="app-version"/g) || []).length >= 2, 'version needs to show in the clip view and in Settings');
 });

@@ -179,7 +179,14 @@
 
   // ---- Start up ---------------------------------------------------------
 
+  function showVersion() {
+    var text = 'v' + (window.MAGPIE_VERSION || '?');
+    var spots = document.querySelectorAll('.app-version');
+    for (var i = 0; i < spots.length; i++) spots[i].textContent = text;
+  }
+
   function init() {
+    showVersion();
     var share = clip.parseShare(window.location.search);
     $('title').value = clip.defaultTitle(share);
     $('url').value = share.url;

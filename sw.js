@@ -1,11 +1,15 @@
 'use strict';
 
-// Bump CACHE when shipping changes so installed copies pick up new files.
-var CACHE = 'magpie-v4';
+// The cache name comes from the app version, so shipping a new version
+// replaces the old cache automatically. Bump the version in version.js.
+importScripts('version.js');
+
+var CACHE = 'magpie-v' + self.MAGPIE_VERSION;
 var SHELL = [
   './',
   'index.html',
   'style.css',
+  'version.js',
   'clip.js',
   'app.js',
   'manifest.webmanifest',
@@ -19,7 +23,14 @@ self.addEventListener('install', function (event) {
     caches
       .open(CACHE)
       .then(function (cache) {
-        return cache.addAll(SHELL);
+        // cache: 'reload' skips the browser's HTTP cache. GitHub Pages marks
+        // files cacheable for ten minutes, so without this a new cache can be
+        // filled with the previous deploy's files.
+        return cache.addAll(
+          SHELL.map(function (path) {
+            return new Request(path, { cache: 'reload' });
+          })
+        );
       })
       .then(function () {
         return self.skipWaiting();
@@ -48,28 +59,31 @@ self.addEventListener('activate', function (event) {
   );
 });
 
-// Serve from cache and refresh in the background. Share links carry a query
-// string (?title=...&text=...&url=...), so cache lookups ignore it.
+// Serve from the cache and refresh it in the background. Share links carry a
+// query string (?title=...&text=...&url=...), so lookups use the path only.
+// The refresh revalidates with the server rather than trusting the HTTP cache.
 self.addEventListener('fetch', function (event) {
   var req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  var url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
+  var key = url.origin + url.pathname;
   event.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(function (cached) {
-      var network = fetch(req)
-        .then(function (res) {
-          if (res && res.ok) {
-            var copy = res.clone();
-            caches.open(CACHE).then(function (cache) {
-              return cache.put(req.url.split('?')[0], copy);
-            });
-          }
-          return res;
-        })
-        .catch(function () {
-          return cached;
-        });
-      return cached || network;
+    caches.match(key).then(function (cached) {
+      var refresh = fetch(key, { cache: 'no-cache' }).then(function (res) {
+        if (res && res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (cache) {
+            return cache.put(key, copy);
+          });
+        }
+        return res;
+      });
+      if (cached) {
+        event.waitUntil(refresh.catch(function () {}));
+        return cached;
+      }
+      return refresh;
     })
   );
 });
