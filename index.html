@@ -86,15 +86,18 @@
         <label for="url">Link</label>
         <input id="url" name="url" type="url" inputmode="url" placeholder="https://">
 
-        <label for="selection">Selected text</label>
-        <textarea id="selection" name="selection" rows="4" placeholder="Optional"></textarea>
+        <div id="selection-field">
+          <label for="selection">Selected text</label>
+          <textarea id="selection" name="selection" rows="4" placeholder="Optional"></textarea>
+        </div>
+        <button type="button" id="add-quote" class="link add-quote" hidden>+ Add a quote</button>
 
         <label for="tags">Extra tags <span class="quiet">(comma-separated)</span></label>
         <input id="tags" name="tags" type="text" placeholder="recipes, to-read" enterkeyhint="next">
         <p id="base-tag-line" class="quiet small">Always tagged: <code id="base-tag"></code>.</p>
 
         <label for="note">Note</label>
-        <textarea id="note" name="note" rows="3" placeholder="Optional"></textarea>
+        <textarea id="note" name="note" rows="2" placeholder="Optional"></textarea>
 
         <button type="submit" id="save">Save to Obsidian</button>
         <button type="button" id="copy" class="secondary">Copy note as Markdown</button>

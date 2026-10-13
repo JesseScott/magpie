@@ -184,6 +184,18 @@
     );
   }
 
+  // The selection box only shows when something was selected, or after
+  // Add a quote is tapped. Most shares are a whole page with no selection.
+  function showSelectionField(show) {
+    $('selection-field').hidden = !show;
+    $('add-quote').hidden = show;
+  }
+
+  function addQuote() {
+    showSelectionField(true);
+    $('selection').focus();
+  }
+
   // ---- Last share received ----------------------------------------------
 
   // Shown in Settings so a new payload shape can be copied into a test.
@@ -225,11 +237,13 @@
     $('title').value = clip.defaultTitle(share);
     $('url').value = share.url;
     $('selection').value = share.selection;
+    showSelectionField(!!share.selection);
     $('hint').hidden = !!(share.title || share.url || share.selection);
     showRawShare(clip.rawShare(window.location.search));
 
     $('clip-form').addEventListener('submit', save);
     $('copy').addEventListener('click', copyNote);
+    $('add-quote').addEventListener('click', addQuote);
     $('open-settings').addEventListener('click', openSettings);
     $('cancel-settings').addEventListener('click', closeSettings);
     $('reset-settings').addEventListener('click', resetSettings);
