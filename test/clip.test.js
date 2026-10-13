@@ -32,6 +32,36 @@ test('rawShare is null when nothing was shared', () => {
   assert.equal(clip.rawShare('?other=1'), null);
 });
 
+test('cleanUrl removes tracking parameters and keeps the rest as shared', () => {
+  const cases = [
+    // A real YouTube app share, captured on a phone.
+    ['https://youtube.com/watch?v=VUGH0DMUesA&si=EMEBM1A2ErBJx9Mr', 'https://youtube.com/watch?v=VUGH0DMUesA'],
+    ['https://youtu.be/VUGH0DMUesA?si=abc', 'https://youtu.be/VUGH0DMUesA'],
+    ['https://example.com/a?utm_source=x&utm_MEDIUM=y&id=7', 'https://example.com/a?id=7'],
+    ['https://example.com/a?b=2&fbclid=IwAR0&a=1#section', 'https://example.com/a?b=2&a=1#section'],
+    ['https://example.com/a?gclid=1&msclkid=2&mc_eid=3&igshid=4', 'https://example.com/a'],
+    ['https://example.com/search?q=a+b&si=keep', 'https://example.com/search?q=a+b&si=keep'],
+    ['https://example.com/a?x=%20y&utm_campaign=z', 'https://example.com/a?x=%20y'],
+    ['https://www.reuters.com/lifestyle/andrew-garfield-2026-10-12/', 'https://www.reuters.com/lifestyle/andrew-garfield-2026-10-12/'],
+  ];
+  for (const [url, expected] of cases) assert.equal(clip.cleanUrl(url), expected, url);
+});
+
+test('cleanUrl unwraps Google redirect links', () => {
+  assert.equal(clip.cleanUrl('https://www.google.com/url?q=https://example.com/a&sa=D&ust=1'), 'https://example.com/a');
+  assert.equal(
+    clip.cleanUrl('https://www.google.co.uk/url?url=https%3A%2F%2Fexample.com%2Fb%3Futm_source%3Dg%26id%3D2'),
+    'https://example.com/b?id=2'
+  );
+  assert.equal(clip.cleanUrl('https://www.google.com/url?q=javascript:alert(1)'), 'https://www.google.com/url?q=javascript:alert(1)');
+});
+
+test('cleanUrl returns anything that is not an http link unchanged', () => {
+  for (const url of ['', 'not a url', 'obsidian://open?vault=x', 'mailto:a@example.com?utm_source=x']) {
+    assert.equal(clip.cleanUrl(url), url, url);
+  }
+});
+
 test('defaultTitle falls back to selection, then hostname', () => {
   assert.equal(clip.defaultTitle({ title: '', url: '', selection: 'First line\nsecond' }), 'First line');
   assert.equal(clip.defaultTitle({ title: '', url: 'https://www.example.com/x', selection: '' }), 'example.com');
