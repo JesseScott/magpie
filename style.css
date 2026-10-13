@@ -138,6 +138,14 @@ footer {
   margin-top: 24px;
 }
 
+/* The install hint only matters in a browser tab. The installed app runs
+   standalone (see manifest.webmanifest). */
+@media (display-mode: standalone) {
+  .install-hint {
+    display: none;
+  }
+}
+
 code {
   font-family: ui-monospace, 'SF Mono', Consolas, monospace;
   font-size: 0.9em;

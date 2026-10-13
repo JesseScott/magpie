@@ -211,6 +211,29 @@ test('Settings says when nothing was shared', async ({ page }) => {
   await expect(page.locator('#copy-raw-share')).toBeHidden();
 });
 
+test('the install hint shows in a browser tab and is hidden in the installed app', async ({ page }) => {
+  await page.goto('./');
+  await configure(page);
+  await expect(page.locator('.install-hint')).toBeVisible();
+
+  // Chromium can't emulate display-mode (CDP accepts it but ignores it), so
+  // check that the stylesheet hides the hint under display-mode: standalone.
+  const hiddenWhenInstalled = await page.evaluate(() => {
+    const hint = document.querySelector('.install-hint');
+    for (const sheet of document.styleSheets) {
+      for (const rule of sheet.cssRules) {
+        if (!(rule instanceof CSSMediaRule)) continue;
+        if (rule.conditionText.replace(/\s+/g, '') !== '(display-mode:standalone)') continue;
+        for (const inner of rule.cssRules) {
+          if (hint.matches(inner.selectorText) && inner.style.display === 'none') return true;
+        }
+      }
+    }
+    return false;
+  });
+  expect(hiddenWhenInstalled).toBe(true);
+});
+
 test('the version on screen matches version.js', async ({ page }) => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'version.js'), 'utf8');
   const version = /MAGPIE_VERSION\s*=\s*'([^']+)'/.exec(source)[1];
