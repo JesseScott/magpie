@@ -180,8 +180,42 @@ label.check input {
   margin: 12px 0 0;
 }
 
-#settings-status.error {
+#settings-status.error,
+#raw-share-status.error {
   color: var(--error);
+}
+
+.raw-share {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.raw-share summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.raw-share pre {
+  margin: 8px 0 0;
+  padding: 12px;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+/* No .small class here: setStatus replaces the class list. */
+#raw-share-status {
+  min-height: 1.45em;
+  margin: 8px 0 0;
+  font-size: 0.875rem;
 }
 
 [hidden] {

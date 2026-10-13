@@ -183,6 +183,34 @@ test('the app loads offline once it has been opened', async ({ page, context }) 
   await expect(page.locator('#dest')).toHaveText('test-vault / Clippings');
 });
 
+test('Settings shows the raw share exactly as received and copies it', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto(SHARE);
+  await configure(page);
+  await page.click('#open-settings');
+  await page.click('#raw-share summary');
+
+  const expected = { title: 'A page title', text: 'Some selected words https://example.com/article', url: null };
+  await expect(page.locator('#raw-share-none')).toBeHidden();
+  expect(JSON.parse(await page.locator('#raw-share-text').textContent())).toEqual(expected);
+
+  await page.click('#copy-raw-share');
+  await expect(page.locator('#raw-share-status')).toHaveText('Copied.');
+  expect(JSON.parse(await page.evaluate(() => navigator.clipboard.readText()))).toEqual(expected);
+  const stored = await page.evaluate(() => Object.keys(localStorage));
+  expect(stored).toEqual(['magpie.settings.v1']);
+});
+
+test('Settings says when nothing was shared', async ({ page }) => {
+  await page.goto('./');
+  await configure(page);
+  await page.click('#open-settings');
+  await page.click('#raw-share summary');
+  await expect(page.locator('#raw-share-none')).toBeVisible();
+  await expect(page.locator('#raw-share-text')).toBeHidden();
+  await expect(page.locator('#copy-raw-share')).toBeHidden();
+});
+
 test('the version on screen matches version.js', async ({ page }) => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'version.js'), 'utf8');
   const version = /MAGPIE_VERSION\s*=\s*'([^']+)'/.exec(source)[1];
