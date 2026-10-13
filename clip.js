@@ -45,6 +45,15 @@
     return { title: title, url: url, selection: selection };
   }
 
+  // What Chrome actually sent, untouched, so a new payload shape can be
+  // copied into a test. A parameter that wasn't sent is null, not ''.
+  // Returns null when nothing was shared.
+  function rawShare(search) {
+    const p = new URLSearchParams(search || '');
+    const raw = { title: p.get('title'), text: p.get('text'), url: p.get('url') };
+    return raw.title === null && raw.text === null && raw.url === null ? null : raw;
+  }
+
   function hostname(url) {
     try {
       return new URL(url).hostname.replace(/^www\./, '');
@@ -187,6 +196,7 @@
     localDate: localDate,
     extractUrl: extractUrl,
     parseShare: parseShare,
+    rawShare: rawShare,
     defaultTitle: defaultTitle,
     sanitizeFileName: sanitizeFileName,
     cleanTag: cleanTag,

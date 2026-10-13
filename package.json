@@ -1,6 +1,6 @@
 {
   "name": "magpie",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "An Android web clipper for Obsidian",
   "private": true,
   "license": "MIT",

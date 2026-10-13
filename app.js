@@ -184,6 +184,31 @@
     );
   }
 
+  // ---- Last share received ----------------------------------------------
+
+  // Shown in Settings so a new payload shape can be copied into a test.
+  // Kept in memory for this launch only.
+  var rawShareJson = '';
+
+  function showRawShare(raw) {
+    rawShareJson = raw ? JSON.stringify(raw, null, 2) : '';
+    $('raw-share-none').hidden = !!raw;
+    $('raw-share-text').hidden = !raw;
+    $('copy-raw-share').hidden = !raw;
+    $('raw-share-text').textContent = rawShareJson;
+  }
+
+  function copyRawShare() {
+    copyText(rawShareJson).then(
+      function () {
+        setStatus('raw-share-status', 'Copied.');
+      },
+      function () {
+        setStatus('raw-share-status', 'Could not access the clipboard.', true);
+      }
+    );
+  }
+
   // ---- Start up ---------------------------------------------------------
 
   function showVersion() {
@@ -199,6 +224,7 @@
     $('url').value = share.url;
     $('selection').value = share.selection;
     $('hint').hidden = !!(share.title || share.url || share.selection);
+    showRawShare(clip.rawShare(window.location.search));
 
     $('clip-form').addEventListener('submit', save);
     $('copy').addEventListener('click', copyNote);
@@ -206,6 +232,7 @@
     $('cancel-settings').addEventListener('click', closeSettings);
     $('reset-settings').addEventListener('click', resetSettings);
     $('settings-form').addEventListener('submit', saveSettingsForm);
+    $('copy-raw-share').addEventListener('click', copyRawShare);
 
     // First run: ask where clips go before anything else. A page that was
     // just shared stays filled in behind the settings screen.

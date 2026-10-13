@@ -59,6 +59,17 @@
         <button type="button" id="reset-settings" class="secondary">Reset to defaults</button>
         <p id="settings-status" role="status" aria-live="polite"></p>
       </form>
+
+      <details id="raw-share" class="raw-share">
+        <summary>Last share received</summary>
+        <p class="quiet small">
+          Exactly what Magpie received when it opened, for bug reports. It isn't stored.
+        </p>
+        <p id="raw-share-none" class="quiet small">Nothing was shared this time.</p>
+        <pre id="raw-share-text" hidden></pre>
+        <button type="button" id="copy-raw-share" class="secondary" hidden>Copy</button>
+        <p id="raw-share-status" role="status" aria-live="polite"></p>
+      </details>
       <p class="quiet small version">Magpie <span class="app-version"></span></p>
     </section>
 

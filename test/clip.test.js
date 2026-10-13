@@ -21,6 +21,17 @@ test('parseShare drops selection equal to title', () => {
   assert.equal(s.selection, '');
 });
 
+test('rawShare keeps the parameters exactly as sent, and null for missing ones', () => {
+  const raw = clip.rawShare('?title=%20My%20Page%20&text=My%20Page%20https%3A%2F%2Fexample.com%2Fa');
+  assert.deepEqual(raw, { title: ' My Page ', text: 'My Page https://example.com/a', url: null });
+  assert.deepEqual(clip.rawShare('?url='), { title: null, text: null, url: '' });
+});
+
+test('rawShare is null when nothing was shared', () => {
+  assert.equal(clip.rawShare(''), null);
+  assert.equal(clip.rawShare('?other=1'), null);
+});
+
 test('defaultTitle falls back to selection, then hostname', () => {
   assert.equal(clip.defaultTitle({ title: '', url: '', selection: 'First line\nsecond' }), 'First line');
   assert.equal(clip.defaultTitle({ title: '', url: 'https://www.example.com/x', selection: '' }), 'example.com');
