@@ -234,6 +234,13 @@ test('the install hint shows in a browser tab and is hidden in the installed app
   expect(hiddenWhenInstalled).toBe(true);
 });
 
+test('a link shared without a title gets a title from the URL', async ({ page }) => {
+  await page.goto('./?text=' + encodeURIComponent('https://example.com/blog/how-to-make-sourdough.html'));
+  await configure(page);
+  await expect(page.locator('#title')).toHaveValue('How to make sourdough');
+  await expect(page.locator('#url')).toHaveValue('https://example.com/blog/how-to-make-sourdough.html');
+});
+
 test('the version on screen matches version.js', async ({ page }) => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'version.js'), 'utf8');
   const version = /MAGPIE_VERSION\s*=\s*'([^']+)'/.exec(source)[1];

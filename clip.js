@@ -62,11 +62,92 @@
     }
   }
 
+  function safeDecode(s) {
+    try {
+      return decodeURIComponent(s);
+    } catch (e) {
+      return s;
+    }
+  }
+
+  // Path words that name a kind of page rather than the page itself.
+  const NOT_TITLES = new Set([
+    'a', 'amp', 'article', 'articles', 'blog', 'comments', 'default', 'en', 'home', 'index',
+    'item', 'news', 'p', 'page', 'post', 'posts', 'status', 'story', 'video', 'videos',
+    'view', 'watch', 'wiki',
+  ]);
+
+  // An ID or a hash: a long number (CBC's "9.7376691" counts), or long and
+  // mixing letters and digits. Short numbers stay, so "10-tips" and
+  // "books-of-2024" keep them.
+  function isIdLike(word) {
+    return /^[\d.]{5,}$/.test(word) || (word.length >= 6 && /\d/.test(word) && /^[a-z0-9]+$/i.test(word));
+  }
+
+  // The readable words in one path segment, or [] if there are none.
+  // A date at either end (Reuters ends slugs with 2026-10-12) is dropped.
+  function slugWords(segment) {
+    const words = safeDecode(segment)
+      .replace(/\.(s?html?|php|aspx?|jsp)$/i, '')
+      .replace(/^\d{4}-\d{2}-\d{2}(?=[-_]|$)|(^|[-_])\d{4}-\d{2}-\d{2}$/g, '')
+      .split(/[-_+\s]+/)
+      .reduce(function (all, w) {
+        // Dots join words ("file.name") except inside a number ("9.7376691").
+        return all.concat(/^[\d.]+$/.test(w) ? [w] : w.split('.'));
+      }, [])
+      .filter(function (w) {
+        return w && !isIdLike(w);
+      });
+    if (!words.some((w) => /\p{L}/u.test(w))) return [];
+    if (words.length === 1 && (words[0].length < 4 || NOT_TITLES.has(words[0].toLowerCase()))) return [];
+    return words;
+  }
+
+  function capitalise(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // A title built from the link alone, for shares that arrive without one.
+  // Returns '' when the path has nothing readable (IDs, hashes, a bare host).
+  function titleFromUrl(url) {
+    let u;
+    try {
+      u = new URL(url);
+    } catch (e) {
+      return '';
+    }
+    const host = u.hostname.replace(/^(www|m|old|mobile)\./, '');
+    const parts = u.pathname.split('/').filter(Boolean);
+
+    if (/(^|\.)wikipedia\.org$/.test(host) && parts[0] === 'wiki' && parts[1]) {
+      return safeDecode(parts.slice(1).join('/')).replace(/_/g, ' ').trim();
+    }
+    if (host === 'github.com' && parts.length >= 2) {
+      return parts[0] + '/' + parts[1];
+    }
+    if (host === 'reddit.com' && parts[0] === 'r' && parts[1]) {
+      const sub = 'r/' + parts[1];
+      const words = parts[2] === 'comments' && parts[4] ? slugWords(parts[4]) : [];
+      return words.length ? capitalise(words.join(' ')) + ' (' + sub + ')' : sub;
+    }
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const words = slugWords(parts[i]);
+      if (words.length) {
+        const title = capitalise(words.join(' '));
+        if (title.length <= 80) return title;
+        const cut = title.slice(0, 81);
+        return cut.slice(0, cut.lastIndexOf(' ')).trim() || title.slice(0, 80);
+      }
+    }
+    return '';
+  }
+
   function defaultTitle(share) {
     if (share.title) return share.title;
     const firstLine = (share.selection || '').split(/\r?\n/)[0].trim();
     if (firstLine) return firstLine.length > 80 ? firstLine.slice(0, 80).trim() : firstLine;
-    return hostname(share.url);
+    return titleFromUrl(share.url) || hostname(share.url);
   }
 
   // Strips characters that Obsidian or Android reject in file names.
@@ -197,6 +278,7 @@
     extractUrl: extractUrl,
     parseShare: parseShare,
     rawShare: rawShare,
+    titleFromUrl: titleFromUrl,
     defaultTitle: defaultTitle,
     sanitizeFileName: sanitizeFileName,
     cleanTag: cleanTag,

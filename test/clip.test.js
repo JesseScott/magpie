@@ -37,6 +37,81 @@ test('defaultTitle falls back to selection, then hostname', () => {
   assert.equal(clip.defaultTitle({ title: '', url: 'https://www.example.com/x', selection: '' }), 'example.com');
 });
 
+test('titleFromUrl turns a readable slug into a title', () => {
+  const cases = [
+    ['https://example.com/blog/2024/03/how-to-make-sourdough.html', 'How to make sourdough'],
+    ['https://www.example.com/articles/12345-why_magpies-collect-things', 'Why magpies collect things'],
+    ['https://medium.com/@someone/a-quiet-place-to-write-3f8a9c2b1d7e', 'A quiet place to write'],
+    ['https://example.com/recipes/focaccia/', 'Focaccia'],
+    ['https://example.com/lists/best-books-of-2024', 'Best books of 2024'],
+    ['https://example.com/10-tips-for-better-notes', '10 tips for better notes'],
+    ['https://example.com/news/caf%C3%A9-opens-downtown', 'Café opens downtown'],
+  ];
+  for (const [url, expected] of cases) {
+    assert.equal(clip.titleFromUrl(url), expected, url);
+  }
+});
+
+test('titleFromUrl handles link-only shares captured on a phone', () => {
+  // Real payloads from the Last share received view, 2026-10-13.
+  assert.equal(
+    clip.titleFromUrl(
+      'https://www.cbc.ca/news/canada/british-columbia/steven-galloway-testifies-faculty-student-relationships-9.7376691'
+    ),
+    'Steven galloway testifies faculty student relationships'
+  );
+  assert.equal(clip.titleFromUrl('https://www.reddit.com/r/AskGameMasters/s/WRmBtljbrT'), 'r/AskGameMasters');
+  assert.equal(clip.titleFromUrl('https://www.puzzle.mu/'), '');
+  assert.equal(clip.titleFromUrl('https://youtube.com/watch?v=VUGH0DMUesA&si=EMEBM1A2ErBJx9Mr'), '');
+});
+
+test('titleFromUrl drops a date at the end of a slug and cuts long titles at a word', () => {
+  assert.equal(
+    clip.titleFromUrl(
+      'https://www.reuters.com/lifestyle/andrew-garfield-says-openai-film-artificial-turns-lens-creators-new-world-2026-10-12/'
+    ),
+    'Andrew garfield says openai film artificial turns lens creators new world'
+  );
+  assert.equal(clip.titleFromUrl('https://example.com/2026-10-12-launch-notes'), 'Launch notes');
+  const long = clip.titleFromUrl('https://example.com/' + 'magpies-'.repeat(15) + 'end');
+  assert.ok(long.length <= 80 && long.endsWith('magpies'), long);
+});
+
+test('titleFromUrl knows a few sites by their URL shape', () => {
+  assert.equal(clip.titleFromUrl('https://en.wikipedia.org/wiki/Common_magpie'), 'Common magpie');
+  assert.equal(clip.titleFromUrl('https://en.m.wikipedia.org/wiki/Eurasian_magpie'), 'Eurasian magpie');
+  assert.equal(clip.titleFromUrl('https://github.com/JesseScott/magpie/pull/29'), 'JesseScott/magpie');
+  assert.equal(
+    clip.titleFromUrl('https://www.reddit.com/r/ObsidianMD/comments/1abc2d/my_clipping_workflow/'),
+    'My clipping workflow (r/ObsidianMD)'
+  );
+  assert.equal(clip.titleFromUrl('https://old.reddit.com/r/ObsidianMD/'), 'r/ObsidianMD');
+});
+
+test('titleFromUrl gives up on paths with nothing readable', () => {
+  for (const url of [
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    'https://youtu.be/dQw4w9WgXcQ',
+    'https://example.com/p/8f3a9c',
+    'https://example.com/',
+    'https://example.com/2024/03/18',
+    'https://example.com/index.html',
+    'https://example.com/x',
+    'not a url',
+    '',
+  ]) {
+    assert.equal(clip.titleFromUrl(url), '', url);
+  }
+});
+
+test('defaultTitle uses the URL only when there is no title or selection', () => {
+  const url = 'https://example.com/how-to-make-sourdough';
+  assert.equal(clip.defaultTitle({ title: 'Shared title', url: url, selection: '' }), 'Shared title');
+  assert.equal(clip.defaultTitle({ title: '', url: url, selection: 'Quoted words' }), 'Quoted words');
+  assert.equal(clip.defaultTitle({ title: '', url: url, selection: '' }), 'How to make sourdough');
+  assert.equal(clip.defaultTitle({ title: '', url: 'https://youtu.be/dQw4w9WgXcQ', selection: '' }), 'youtu.be');
+});
+
 test('sanitizeFileName removes illegal characters and trailing dots', () => {
   assert.equal(clip.sanitizeFileName('A/B: C? [D]#E.', 'x'), 'A B C D E');
   assert.equal(clip.sanitizeFileName('???', 'Clip 2026-10-11'), 'Clip 2026-10-11');
