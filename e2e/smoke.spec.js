@@ -241,6 +241,20 @@ test('a link shared without a title gets a title from the URL', async ({ page })
   await expect(page.locator('#url')).toHaveValue('https://example.com/blog/how-to-make-sourdough.html');
 });
 
+test('a shared title loses the site name at the end', async ({ page }) => {
+  // A real Chrome share of a Reuters article, captured on a phone.
+  await page.goto(
+    './?title=' +
+      encodeURIComponent("Andrew Garfield says OpenAI film 'Artificial' turns lens on creators of 'new world' | Reuters") +
+      '&text=' +
+      encodeURIComponent('https://www.reuters.com/lifestyle/andrew-garfield-says-openai-film-artificial-turns-lens-creators-new-world-2026-10-12/')
+  );
+  await configure(page);
+  await expect(page.locator('#title')).toHaveValue(
+    "Andrew Garfield says OpenAI film 'Artificial' turns lens on creators of 'new world'"
+  );
+});
+
 test('the version on screen matches version.js', async ({ page }) => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'version.js'), 'utf8');
   const version = /MAGPIE_VERSION\s*=\s*'([^']+)'/.exec(source)[1];

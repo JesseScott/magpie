@@ -143,8 +143,62 @@
     return '';
   }
 
+  // Site names that appear on other hosts too (custom domains, embeds).
+  const KNOWN_SITES = ['github', 'medium', 'reddit', 'substack', 'wikipedia', 'youtube'];
+
+  // Words a site adds after its name: "CBC News", "Wired Magazine".
+  const SITE_WORDS = ['', 'news', 'online', 'blog', 'magazine', 'com'];
+
+  // Separators sites put between the page title and their own name.
+  const TITLE_SEPARATORS = [' | ', ' - ', ' \u2013 ', ' \u2014 ', ' \u00b7 ', ' :: '];
+
+  function squash(s) {
+    return String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  }
+
+  // Does this piece of a title name the site at this URL? "Reuters" for
+  // reuters.com, "The Kitchen" for thekitchen.com, "CBC News" for cbc.ca.
+  function namesSite(piece, url) {
+    const name = squash(piece);
+    if (!name || piece.length > 40) return false;
+    if (KNOWN_SITES.indexOf(name) >= 0) return true;
+    let labels;
+    try {
+      labels = new URL(url).hostname.split('.').slice(0, -1);
+    } catch (e) {
+      return false;
+    }
+    return labels.some(function (label) {
+      label = squash(label);
+      if (label.length < 3) return false;
+      return name === label || SITE_WORDS.some((w) => name === label + w || name === 'the' + label + w);
+    });
+  }
+
+  // Removes the site's name from a shared title when it is clearly there:
+  // "How to bake bread | The Kitchen" becomes "How to bake bread". Only the
+  // last piece (or the first, for "GitHub - owner/repo") is ever removed,
+  // and only when it names the site, so "Part 2 - Getting started" stays.
+  function tidyTitle(title, url) {
+    const t = String(title || '').replace(/\s+/g, ' ').trim();
+    let best = null;
+    TITLE_SEPARATORS.forEach(function (sep) {
+      const last = t.lastIndexOf(sep);
+      if (last > 0 && (!best || last > best.at) && namesSite(t.slice(last + sep.length), url)) {
+        best = { at: last, keep: t.slice(0, last) };
+      }
+    });
+    if (best) return best.keep.trim();
+    for (let i = 0; i < TITLE_SEPARATORS.length; i++) {
+      const sep = TITLE_SEPARATORS[i];
+      const first = t.indexOf(sep);
+      if (first > 0 && namesSite(t.slice(0, first), url)) return t.slice(first + sep.length).trim();
+    }
+    return t;
+  }
+
   function defaultTitle(share) {
-    if (share.title) return share.title;
+    if (share.title) return tidyTitle(share.title, share.url) || share.title;
     const firstLine = (share.selection || '').split(/\r?\n/)[0].trim();
     if (firstLine) return firstLine.length > 80 ? firstLine.slice(0, 80).trim() : firstLine;
     return titleFromUrl(share.url) || hostname(share.url);
@@ -279,6 +333,7 @@
     parseShare: parseShare,
     rawShare: rawShare,
     titleFromUrl: titleFromUrl,
+    tidyTitle: tidyTitle,
     defaultTitle: defaultTitle,
     sanitizeFileName: sanitizeFileName,
     cleanTag: cleanTag,

@@ -104,6 +104,55 @@ test('titleFromUrl gives up on paths with nothing readable', () => {
   }
 });
 
+test('tidyTitle removes the site name from real shared titles', () => {
+  // Payloads captured on a phone with the Last share received view, 2026-10-13.
+  assert.equal(
+    clip.tidyTitle(
+      "Andrew Garfield says OpenAI film 'Artificial' turns lens on creators of 'new world' | Reuters",
+      'https://www.reuters.com/lifestyle/andrew-garfield-says-openai-film-artificial-turns-lens-creators-new-world-2026-10-12/'
+    ),
+    "Andrew Garfield says OpenAI film 'Artificial' turns lens on creators of 'new world'"
+  );
+  assert.equal(clip.tidyTitle('MU Puzzle', 'https://www.puzzle.mu/'), 'MU Puzzle');
+  assert.equal(
+    clip.tidyTitle('Obsidian For Learning Part III: Projects', 'https://youtube.com/watch?v=VUGH0DMUesA'),
+    'Obsidian For Learning Part III: Projects'
+  );
+});
+
+test('tidyTitle matches the site by host or by a short list of known names', () => {
+  const cases = [
+    ['How to bake bread | The Kitchen', 'https://www.thekitchen.com/bread', 'How to bake bread'],
+    ['Election results - CBC News', 'https://www.cbc.ca/news/x', 'Election results'],
+    ['Some video - YouTube', 'https://m.youtube.com/watch?v=abc', 'Some video'],
+    ['Common magpie - Wikipedia', 'https://en.wikipedia.org/wiki/Common_magpie', 'Common magpie'],
+    ['A long read | by Someone | Medium', 'https://blog.example.com/a-long-read', 'A long read | by Someone'],
+    ['GitHub - JesseScott/magpie: an Android web clipper', 'https://github.com/JesseScott/magpie', 'JesseScott/magpie: an Android web clipper'],
+    ['Weekly notes \u2014 Example', 'https://example.com/notes', 'Weekly notes'],
+    ['  Too   many   spaces  ', 'https://example.com/', 'Too many spaces'],
+  ];
+  for (const [title, url, expected] of cases) assert.equal(clip.tidyTitle(title, url), expected, title);
+});
+
+test('tidyTitle leaves titles alone when the last piece is not the site', () => {
+  const cases = [
+    ['Part 2 - Getting started', 'https://docs.example.com/part-2'],
+    ['Cats | Dogs', 'https://pets.example.org/'],
+    ['Reuters', 'https://www.reuters.com/'],
+    ['Q&A - Ask anything', 'https://example.com/qa'],
+    ['Notes - Example usage', 'https://example.com/notes'],
+    ['A title', 'not a url'],
+  ];
+  for (const [title, url] of cases) assert.equal(clip.tidyTitle(title, url), title, title);
+});
+
+test('defaultTitle tidies a shared title', () => {
+  const share = clip.parseShare(
+    '?title=' + encodeURIComponent('Some video - YouTube') + '&text=' + encodeURIComponent('https://youtube.com/watch?v=abc')
+  );
+  assert.equal(clip.defaultTitle(share), 'Some video');
+});
+
 test('defaultTitle uses the URL only when there is no title or selection', () => {
   const url = 'https://example.com/how-to-make-sourdough';
   assert.equal(clip.defaultTitle({ title: 'Shared title', url: url, selection: '' }), 'Shared title');
