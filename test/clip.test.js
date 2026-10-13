@@ -37,6 +37,59 @@ test('defaultTitle falls back to selection, then hostname', () => {
   assert.equal(clip.defaultTitle({ title: '', url: 'https://www.example.com/x', selection: '' }), 'example.com');
 });
 
+test('titleFromUrl turns a readable slug into a title', () => {
+  const cases = [
+    ['https://example.com/blog/2024/03/how-to-make-sourdough.html', 'How to make sourdough'],
+    ['https://www.example.com/articles/12345-why_magpies-collect-things', 'Why magpies collect things'],
+    ['https://medium.com/@someone/a-quiet-place-to-write-3f8a9c2b1d7e', 'A quiet place to write'],
+    ['https://example.com/recipes/focaccia/', 'Focaccia'],
+    ['https://example.com/lists/best-books-of-2024', 'Best books of 2024'],
+    ['https://example.com/10-tips-for-better-notes', '10 tips for better notes'],
+    ['https://example.com/news/caf%C3%A9-opens-downtown', 'Café opens downtown'],
+    ['https://example.com/a-very-long-slug-' + 'word-'.repeat(30) + 'end', null],
+  ];
+  for (const [url, expected] of cases) {
+    const title = clip.titleFromUrl(url);
+    if (expected === null) assert.ok(title.length <= 80 && title.startsWith('A very long slug'), url);
+    else assert.equal(title, expected, url);
+  }
+});
+
+test('titleFromUrl knows a few sites by their URL shape', () => {
+  assert.equal(clip.titleFromUrl('https://en.wikipedia.org/wiki/Common_magpie'), 'Common magpie');
+  assert.equal(clip.titleFromUrl('https://en.m.wikipedia.org/wiki/Eurasian_magpie'), 'Eurasian magpie');
+  assert.equal(clip.titleFromUrl('https://github.com/JesseScott/magpie/pull/29'), 'JesseScott/magpie');
+  assert.equal(
+    clip.titleFromUrl('https://www.reddit.com/r/ObsidianMD/comments/1abc2d/my_clipping_workflow/'),
+    'My clipping workflow (r/ObsidianMD)'
+  );
+  assert.equal(clip.titleFromUrl('https://old.reddit.com/r/ObsidianMD/'), 'r/ObsidianMD');
+});
+
+test('titleFromUrl gives up on paths with nothing readable', () => {
+  for (const url of [
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    'https://youtu.be/dQw4w9WgXcQ',
+    'https://example.com/p/8f3a9c',
+    'https://example.com/',
+    'https://example.com/2024/03/18',
+    'https://example.com/index.html',
+    'https://example.com/x',
+    'not a url',
+    '',
+  ]) {
+    assert.equal(clip.titleFromUrl(url), '', url);
+  }
+});
+
+test('defaultTitle uses the URL only when there is no title or selection', () => {
+  const url = 'https://example.com/how-to-make-sourdough';
+  assert.equal(clip.defaultTitle({ title: 'Shared title', url: url, selection: '' }), 'Shared title');
+  assert.equal(clip.defaultTitle({ title: '', url: url, selection: 'Quoted words' }), 'Quoted words');
+  assert.equal(clip.defaultTitle({ title: '', url: url, selection: '' }), 'How to make sourdough');
+  assert.equal(clip.defaultTitle({ title: '', url: 'https://youtu.be/dQw4w9WgXcQ', selection: '' }), 'youtu.be');
+});
+
 test('sanitizeFileName removes illegal characters and trailing dots', () => {
   assert.equal(clip.sanitizeFileName('A/B: C? [D]#E.', 'x'), 'A B C D E');
   assert.equal(clip.sanitizeFileName('???', 'Clip 2026-10-11'), 'Clip 2026-10-11');
