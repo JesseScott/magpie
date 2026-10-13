@@ -272,6 +272,39 @@ test('tracking parameters come off a shared link before it is saved', async ({ p
   expect(note).not.toContain('si=');
 });
 
+test('a page shared without a selection hides the Selected text box until Add a quote', async ({ page }) => {
+  await page.goto('./?title=' + encodeURIComponent('A page') + '&text=' + encodeURIComponent('https://example.com/a'));
+  await configure(page);
+  await expect(page.locator('#selection')).toBeHidden();
+  await expect(page.locator('#add-quote')).toBeVisible();
+
+  await page.click('#add-quote');
+  await expect(page.locator('#add-quote')).toBeHidden();
+  await expect(page.locator('#selection')).toBeFocused();
+  await page.keyboard.type('Typed by hand');
+  await page.click('#save');
+  const { note } = await openedLink(page);
+  expect(note).toContain('\n> Typed by hand\n');
+});
+
+test('a shared selection shows the Selected text box filled in', async ({ page }) => {
+  await page.goto(SHARE);
+  await configure(page);
+  await expect(page.locator('#selection')).toBeVisible();
+  await expect(page.locator('#selection')).toHaveValue('Some selected words');
+  await expect(page.locator('#add-quote')).toBeHidden();
+});
+
+test('the note box starts at two lines and grows as you type', async ({ page }) => {
+  await page.goto(SHARE);
+  await configure(page);
+  const note = page.locator('#note');
+  const empty = (await note.boundingBox()).height;
+  await note.fill('one\ntwo\nthree\nfour\nfive\nsix');
+  const full = (await note.boundingBox()).height;
+  expect(full).toBeGreaterThan(empty * 1.5);
+});
+
 test('the version on screen matches version.js', async ({ page }) => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'version.js'), 'utf8');
   const version = /MAGPIE_VERSION\s*=\s*'([^']+)'/.exec(source)[1];

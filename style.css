@@ -94,6 +94,14 @@ textarea {
   resize: vertical;
 }
 
+/* The note starts at two lines and grows with what's typed. Browsers
+   without field-sizing keep a fixed two-line box that can be resized. */
+#note {
+  field-sizing: content;
+  min-height: calc(2.9em + 26px);
+  max-height: 50vh;
+}
+
 input:focus,
 textarea:focus {
   outline: 2px solid var(--accent);
@@ -167,6 +175,11 @@ button.link {
   background: none;
   border: 0;
   font-weight: 600;
+}
+
+button.add-quote {
+  margin-top: 12px;
+  padding: 0;
 }
 
 label.check {
