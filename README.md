@@ -56,6 +56,8 @@ The first time you open Magpie it asks where to save clips. Open **Settings** an
 
 Settings are stored on your device and survive closing the app.
 
+Shared links always lose their tracking parameters (`utm_*`, `fbclid`, `gclid`, YouTube's `si` and similar), and Google redirect links are unwrapped to where they point. Other parameters are kept.
+
 ## Privacy
 
 Everything runs on your phone. Magpie has no server, no analytics and no account, and nothing you clip is sent anywhere except to Obsidian on the same device. The only network requests are the ones that load the app itself.

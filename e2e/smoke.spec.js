@@ -255,6 +255,23 @@ test('a shared title loses the site name at the end', async ({ page }) => {
   );
 });
 
+test('tracking parameters come off a shared link before it is saved', async ({ page }) => {
+  // A real YouTube app share, captured on a phone.
+  await page.goto(
+    './?title=' +
+      encodeURIComponent('Obsidian For Learning Part III: Projects') +
+      '&text=' +
+      encodeURIComponent('https://youtube.com/watch?v=VUGH0DMUesA&si=EMEBM1A2ErBJx9Mr')
+  );
+  await configure(page);
+  await expect(page.locator('#url')).toHaveValue('https://youtube.com/watch?v=VUGH0DMUesA');
+
+  await page.click('#save');
+  const { note } = await openedLink(page);
+  expect(note).toContain('source: "https://youtube.com/watch?v=VUGH0DMUesA"\n');
+  expect(note).not.toContain('si=');
+});
+
 test('the version on screen matches version.js', async ({ page }) => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'version.js'), 'utf8');
   const version = /MAGPIE_VERSION\s*=\s*'([^']+)'/.exec(source)[1];

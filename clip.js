@@ -54,6 +54,52 @@
     return raw.title === null && raw.text === null && raw.url === null ? null : raw;
   }
 
+  // Query parameters that only track where a click came from. Exact names,
+  // plus anything starting with utm_. YouTube's `si` is dropped on YouTube
+  // hosts only, since other sites use `si` for real things.
+  const TRACKING_PARAMS = new Set([
+    'fbclid', 'gclid', 'dclid', 'gbraid', 'wbraid', 'msclkid', 'mc_cid', 'mc_eid', 'igshid', 'ref_src',
+  ]);
+
+  function isTrackingParam(name, host) {
+    const n = name.toLowerCase();
+    if (n.indexOf('utm_') === 0 || TRACKING_PARAMS.has(n)) return true;
+    return n === 'si' && /(^|\.)(youtube\.com|youtu\.be)$/.test(host);
+  }
+
+  // A shared link without tracking parameters, and a Google redirect
+  // (google.com/url?q=...) unwrapped to where it points. Everything else,
+  // including the order of the other parameters and the #fragment, is kept.
+  // Anything that isn't an http(s) URL comes back unchanged.
+  function cleanUrl(url) {
+    const raw = String(url || '').trim();
+    let u;
+    try {
+      u = new URL(raw);
+    } catch (e) {
+      return raw;
+    }
+    if (!/^https?:$/.test(u.protocol)) return raw;
+
+    if (/(^|\.)google\.[a-z.]+$/.test(u.hostname) && u.pathname === '/url') {
+      const target = u.searchParams.get('q') || u.searchParams.get('url');
+      if (target && /^https?:\/\//i.test(target)) return cleanUrl(target);
+    }
+
+    const host = u.hostname;
+    const kept = raw
+      .replace(/#.*$/, '')
+      .replace(/^[^?]*\??/, '')
+      .split('&')
+      .filter(function (pair) {
+        if (!pair) return false;
+        const name = safeDecode(pair.split('=')[0].replace(/\+/g, ' '));
+        return !isTrackingParam(name, host);
+      });
+    // Rebuilt by hand so the kept parameters stay byte-for-byte as shared.
+    return u.origin + u.pathname + (kept.length ? '?' + kept.join('&') : '') + u.hash;
+  }
+
   function hostname(url) {
     try {
       return new URL(url).hostname.replace(/^www\./, '');
@@ -332,6 +378,7 @@
     extractUrl: extractUrl,
     parseShare: parseShare,
     rawShare: rawShare,
+    cleanUrl: cleanUrl,
     titleFromUrl: titleFromUrl,
     tidyTitle: tidyTitle,
     defaultTitle: defaultTitle,

@@ -220,6 +220,8 @@
   function init() {
     showVersion();
     var share = clip.parseShare(window.location.search);
+    // Tracking parameters always come off the shared link.
+    share.url = clip.cleanUrl(share.url);
     $('title').value = clip.defaultTitle(share);
     $('url').value = share.url;
     $('selection').value = share.selection;
