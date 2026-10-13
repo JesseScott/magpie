@@ -77,17 +77,24 @@
     'view', 'watch', 'wiki',
   ]);
 
-  // An ID or a hash: a long number, or long and mixing letters and digits.
-  // Short numbers stay, so "10-tips" and "books-of-2024" keep them.
+  // An ID or a hash: a long number (CBC's "9.7376691" counts), or long and
+  // mixing letters and digits. Short numbers stay, so "10-tips" and
+  // "books-of-2024" keep them.
   function isIdLike(word) {
-    return /^\d{5,}$/.test(word) || (word.length >= 6 && /\d/.test(word) && /^[a-z0-9]+$/i.test(word));
+    return /^[\d.]{5,}$/.test(word) || (word.length >= 6 && /\d/.test(word) && /^[a-z0-9]+$/i.test(word));
   }
 
   // The readable words in one path segment, or [] if there are none.
+  // A date at either end (Reuters ends slugs with 2026-10-12) is dropped.
   function slugWords(segment) {
     const words = safeDecode(segment)
       .replace(/\.(s?html?|php|aspx?|jsp)$/i, '')
-      .split(/[-_+.\s]+/)
+      .replace(/^\d{4}-\d{2}-\d{2}(?=[-_]|$)|(^|[-_])\d{4}-\d{2}-\d{2}$/g, '')
+      .split(/[-_+\s]+/)
+      .reduce(function (all, w) {
+        // Dots join words ("file.name") except inside a number ("9.7376691").
+        return all.concat(/^[\d.]+$/.test(w) ? [w] : w.split('.'));
+      }, [])
       .filter(function (w) {
         return w && !isIdLike(w);
       });
@@ -128,7 +135,9 @@
       const words = slugWords(parts[i]);
       if (words.length) {
         const title = capitalise(words.join(' '));
-        return title.length > 80 ? title.slice(0, 80).trim() : title;
+        if (title.length <= 80) return title;
+        const cut = title.slice(0, 81);
+        return cut.slice(0, cut.lastIndexOf(' ')).trim() || title.slice(0, 80);
       }
     }
     return '';

@@ -46,13 +46,35 @@ test('titleFromUrl turns a readable slug into a title', () => {
     ['https://example.com/lists/best-books-of-2024', 'Best books of 2024'],
     ['https://example.com/10-tips-for-better-notes', '10 tips for better notes'],
     ['https://example.com/news/caf%C3%A9-opens-downtown', 'Café opens downtown'],
-    ['https://example.com/a-very-long-slug-' + 'word-'.repeat(30) + 'end', null],
   ];
   for (const [url, expected] of cases) {
-    const title = clip.titleFromUrl(url);
-    if (expected === null) assert.ok(title.length <= 80 && title.startsWith('A very long slug'), url);
-    else assert.equal(title, expected, url);
+    assert.equal(clip.titleFromUrl(url), expected, url);
   }
+});
+
+test('titleFromUrl handles link-only shares captured on a phone', () => {
+  // Real payloads from the Last share received view, 2026-10-13.
+  assert.equal(
+    clip.titleFromUrl(
+      'https://www.cbc.ca/news/canada/british-columbia/steven-galloway-testifies-faculty-student-relationships-9.7376691'
+    ),
+    'Steven galloway testifies faculty student relationships'
+  );
+  assert.equal(clip.titleFromUrl('https://www.reddit.com/r/AskGameMasters/s/WRmBtljbrT'), 'r/AskGameMasters');
+  assert.equal(clip.titleFromUrl('https://www.puzzle.mu/'), '');
+  assert.equal(clip.titleFromUrl('https://youtube.com/watch?v=VUGH0DMUesA&si=EMEBM1A2ErBJx9Mr'), '');
+});
+
+test('titleFromUrl drops a date at the end of a slug and cuts long titles at a word', () => {
+  assert.equal(
+    clip.titleFromUrl(
+      'https://www.reuters.com/lifestyle/andrew-garfield-says-openai-film-artificial-turns-lens-creators-new-world-2026-10-12/'
+    ),
+    'Andrew garfield says openai film artificial turns lens creators new world'
+  );
+  assert.equal(clip.titleFromUrl('https://example.com/2026-10-12-launch-notes'), 'Launch notes');
+  const long = clip.titleFromUrl('https://example.com/' + 'magpies-'.repeat(15) + 'end');
+  assert.ok(long.length <= 80 && long.endsWith('magpies'), long);
 });
 
 test('titleFromUrl knows a few sites by their URL shape', () => {
