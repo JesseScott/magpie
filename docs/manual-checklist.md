@@ -11,6 +11,7 @@ The automated tests cover the screen and the link Magpie builds. They can't cove
 - [ ] In Chrome, the menu offers **Install app**. Choose it, not **Create shortcut**.
 - [ ] The app icon on the home screen is the magpie icon, with no white corners or squashed shape.
 - [ ] Opening the installed app shows no browser address bar.
+- [ ] The installed app doesn't show the "To install" hint at the bottom. A Chrome tab still does.
 
 ## Share sheet
 
