@@ -18,6 +18,7 @@ The automated tests cover the screen and the link Magpie builds. They can't cove
 - [ ] Sharing a page from Chrome lists **Magpie**.
 - [ ] Sharing a page fills in the title and the link.
 - [ ] Sharing selected text fills in the selection and the link, and the title looks right (Chrome sometimes sends the title and link together).
+- [ ] With the keyboard open in the Title or Note field, **Save to Obsidian** is visible above the keyboard.
 - [ ] On first run, a shared page is still filled in after saving settings.
 
 ## Handoff into Obsidian
