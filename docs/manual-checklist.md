@@ -32,3 +32,4 @@ The automated tests cover the screen and the link Magpie builds. They can't cove
 
 - [ ] Settings survive fully closing and reopening the app.
 - [ ] Clearing Magpie's site data in Chrome brings back the first-run screen.
+- [ ] An extra tag used on one clip shows as a chip on the next share, and tapping it adds the tag. The chips fit on the screen without pushing **Save to Obsidian** far down.

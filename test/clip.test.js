@@ -308,3 +308,55 @@ test('parseTags puts always-on tags first, then extras, without duplicates', () 
   assert.deepEqual(clip.parseTags('', 'clippings, magpie'), ['clippings', 'magpie']);
   assert.deepEqual(clip.parseTags('a', ''), ['a']);
 });
+
+test('recordTags counts each use and keeps the latest date', () => {
+  let r = clip.recordTags(null, ['recipes', 'to-read'], '2026-10-01');
+  r = clip.recordTags(r, ['#Recipes', ' ', 'bread baking'], '2026-10-02');
+  assert.deepEqual(r, {
+    'to-read': { count: 1, last: '2026-10-01' },
+    Recipes: { count: 2, last: '2026-10-02' },
+    'bread-baking': { count: 1, last: '2026-10-02' },
+  });
+});
+
+test('recordTags does not change the record it was given', () => {
+  const before = { recipes: { count: 1, last: '2026-10-01' } };
+  clip.recordTags(before, ['recipes'], '2026-10-02');
+  assert.deepEqual(before, { recipes: { count: 1, last: '2026-10-01' } });
+});
+
+test('recordTags keeps at most 50 tags, dropping the least used first', () => {
+  const r = {};
+  for (let i = 0; i < 50; i++) r['tag' + i] = { count: 2, last: '2026-10-01' };
+  r.tag0.count = 1;
+  const next = clip.recordTags(r, ['new'], '2026-10-02');
+  assert.equal(Object.keys(next).length, 50);
+  assert.ok('new' in next);
+  assert.ok(!('tag0' in next));
+});
+
+test('rankTags orders by use count, then last use, then name', () => {
+  const r = {
+    old: { count: 3, last: '2026-09-01' },
+    fresh: { count: 3, last: '2026-10-01' },
+    rare: { count: 1, last: '2026-10-05' },
+    beta: { count: 2, last: '2026-10-01' },
+    alpha: { count: 2, last: '2026-10-01' },
+  };
+  assert.deepEqual(clip.rankTags(r), ['fresh', 'old', 'alpha', 'beta', 'rare']);
+  assert.deepEqual(clip.rankTags(r, [], 2), ['fresh', 'old']);
+});
+
+test('rankTags leaves out excluded tags, ignoring case', () => {
+  const r = { Clippings: { count: 9, last: '' }, recipes: { count: 1, last: '' } };
+  assert.deepEqual(clip.rankTags(r, ['clippings', 'magpie']), ['recipes']);
+});
+
+test('rankTags shows at most eight by default and ignores unreadable data', () => {
+  const r = {};
+  for (let i = 0; i < 12; i++) r['t' + i] = { count: i + 1, last: '' };
+  assert.equal(clip.rankTags(r).length, 8);
+  assert.deepEqual(clip.rankTags({ ok: { count: 1 }, bad: { count: 0 }, worse: 'x', '##': { count: 5 } }), ['ok']);
+  assert.deepEqual(clip.rankTags('junk'), []);
+  assert.deepEqual(clip.rankTags(['a']), []);
+});

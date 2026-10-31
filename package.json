@@ -1,6 +1,6 @@
 {
   "name": "magpie",
-  "version": "0.3.7",
+  "version": "0.4.0",
   "description": "An Android web clipper for Obsidian",
   "private": true,
   "license": "MIT",
@@ -10,6 +10,6 @@
     "test:e2e": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.0"
+    "@playwright/test": "1.64.1"
   }
 }

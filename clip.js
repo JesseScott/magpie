@@ -297,6 +297,76 @@
     return cleanTagList(String(baseTags || '') + ',' + String(input || ''));
   }
 
+  // ---- Recent tags ------------------------------------------------------
+
+  // Extra tags used before, kept on the device as
+  // { "<tag>": { "count": n, "last": "YYYY-MM-DD" } } and offered as chips.
+  const RECENT_TAG_CAP = 50;
+
+  // A stored record, with anything unreadable dropped.
+  function cleanRecent(record) {
+    const out = {};
+    if (!record || typeof record !== 'object' || Array.isArray(record)) return out;
+    Object.keys(record).forEach(function (key) {
+      const tag = cleanTag(key);
+      const entry = record[key];
+      if (!tag || !entry || typeof entry !== 'object') return;
+      const count = Math.floor(Number(entry.count));
+      if (!(count > 0)) return;
+      out[tag] = { count: count, last: typeof entry.last === 'string' ? entry.last : '' };
+    });
+    return out;
+  }
+
+  // Most used first, then most recently used, then alphabetical.
+  function byUse(record) {
+    return function (a, b) {
+      return (
+        record[b].count - record[a].count ||
+        (record[a].last < record[b].last ? 1 : record[a].last > record[b].last ? -1 : 0) ||
+        a.localeCompare(b)
+      );
+    };
+  }
+
+  // Counts one more use of each tag on the given date and returns a new
+  // record. A tag matches an earlier one ignoring case, and keeps the
+  // spelling used last. Past the cap, the least used tags are dropped.
+  function recordTags(record, tags, date) {
+    const next = cleanRecent(record);
+    cleanTagList((tags || []).join(',')).forEach(function (tag) {
+      let count = 0;
+      Object.keys(next).forEach(function (key) {
+        if (key.toLowerCase() !== tag.toLowerCase()) return;
+        count += next[key].count;
+        delete next[key];
+      });
+      next[tag] = { count: count + 1, last: String(date || '') };
+    });
+    const keys = Object.keys(next).sort(byUse(next));
+    keys.slice(RECENT_TAG_CAP).forEach(function (key) {
+      delete next[key];
+    });
+    return next;
+  }
+
+  // Up to `limit` tags to suggest, best first, leaving out any in `exclude`
+  // (ignoring case).
+  function rankTags(record, exclude, limit) {
+    const recent = cleanRecent(record);
+    const skip = new Set(
+      (exclude || []).map(function (t) {
+        return String(t).toLowerCase();
+      })
+    );
+    return Object.keys(recent)
+      .filter(function (tag) {
+        return !skip.has(tag.toLowerCase());
+      })
+      .sort(byUse(recent))
+      .slice(0, limit === undefined ? 8 : limit);
+  }
+
   // A folder path inside the vault: forward slashes, no empty or dot
   // segments, no characters Obsidian rejects. Blank means the vault root.
   function cleanFolder(value) {
@@ -386,6 +456,8 @@
     cleanTag: cleanTag,
     cleanTagList: cleanTagList,
     parseTags: parseTags,
+    recordTags: recordTags,
+    rankTags: rankTags,
     cleanFolder: cleanFolder,
     cleanKey: cleanKey,
     normalizeSettings: normalizeSettings,
