@@ -59,7 +59,7 @@
     });
     if (!extras.length) return;
     try {
-      var next = clip.recordTags(loadRecent(), extras, clip.localDate());
+      var next = clip.recordTags(loadRecent(), extras, clip.localDate(), $('url').value.trim());
       window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
     } catch (e) {
       /* Suggestions are a convenience; saving the clip matters more. */
@@ -84,7 +84,11 @@
 
   function renderChips() {
     var box = $('tag-chips');
-    var tags = clip.rankTags(loadRecent(), clip.cleanTagList(settings.baseTag));
+    // Ranked once for the page as shared, so chips don't move while typing.
+    var tags = clip.rankTags(loadRecent(), clip.cleanTagList(settings.baseTag), 8, {
+      url: $('url').value,
+      title: $('title').value,
+    });
     box.textContent = '';
     tags.forEach(function (tag) {
       var chip = document.createElement('button');

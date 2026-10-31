@@ -315,8 +315,10 @@
   // ---- Recent tags ------------------------------------------------------
 
   // Extra tags used before, kept on the device as
-  // { "<tag>": { "count": n, "last": "YYYY-MM-DD" } } and offered as chips.
+  // { "<tag>": { "count": n, "last": "YYYY-MM-DD", "hosts": { "<host>": n } } }
+  // and offered as chips. Records saved before hosts existed have none.
   const RECENT_TAG_CAP = 50;
+  const HOSTS_PER_TAG = 10;
 
   // A stored record, with anything unreadable dropped.
   function cleanRecent(record) {
@@ -328,9 +330,43 @@
       if (!tag || !entry || typeof entry !== 'object') return;
       const count = Math.floor(Number(entry.count));
       if (!(count > 0)) return;
-      out[tag] = { count: count, last: typeof entry.last === 'string' ? entry.last : '' };
+      out[tag] = {
+        count: count,
+        last: typeof entry.last === 'string' ? entry.last : '',
+        hosts: cleanHosts(entry.hosts),
+      };
     });
     return out;
+  }
+
+  function cleanHosts(hosts) {
+    const out = {};
+    if (!hosts || typeof hosts !== 'object' || Array.isArray(hosts)) return out;
+    Object.keys(hosts).forEach(function (host) {
+      const n = Math.floor(Number(hosts[host]));
+      if (host && n > 0) out[host] = n;
+    });
+    return out;
+  }
+
+  // Keeps the hosts a tag was used on most, dropping the rest.
+  function capHosts(hosts) {
+    const out = {};
+    Object.keys(hosts)
+      .sort(function (a, b) {
+        return hosts[b] - hosts[a] || a.localeCompare(b);
+      })
+      .slice(0, HOSTS_PER_TAG)
+      .forEach(function (host) {
+        out[host] = hosts[host];
+      });
+    return out;
+  }
+
+  // Lower case, with anything that isn't a letter or digit as a single
+  // space, padded so a phrase can be matched as whole words.
+  function wordsOf(s) {
+    return ' ' + String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim() + ' ';
   }
 
   // Most used first, then most recently used, then alphabetical.
@@ -344,19 +380,26 @@
     };
   }
 
-  // Counts one more use of each tag on the given date and returns a new
-  // record. A tag matches an earlier one ignoring case, and keeps the
-  // spelling used last. Past the cap, the least used tags are dropped.
-  function recordTags(record, tags, date) {
+  // Counts one more use of each tag on the given date, and on the site of
+  // the given link, and returns a new record. A tag matches an earlier one
+  // ignoring case, and keeps the spelling used last. Past the cap, the
+  // least used tags are dropped.
+  function recordTags(record, tags, date, url) {
     const next = cleanRecent(record);
+    const host = hostname(url);
     cleanTagList((tags || []).join(',')).forEach(function (tag) {
       let count = 0;
+      const hosts = {};
       Object.keys(next).forEach(function (key) {
         if (key.toLowerCase() !== tag.toLowerCase()) return;
         count += next[key].count;
+        Object.keys(next[key].hosts).forEach(function (h) {
+          hosts[h] = (hosts[h] || 0) + next[key].hosts[h];
+        });
         delete next[key];
       });
-      next[tag] = { count: count + 1, last: String(date || '') };
+      if (host) hosts[host] = (hosts[host] || 0) + 1;
+      next[tag] = { count: count + 1, last: String(date || ''), hosts: capHosts(hosts) };
     });
     const keys = Object.keys(next).sort(byUse(next));
     keys.slice(RECENT_TAG_CAP).forEach(function (key) {
@@ -366,19 +409,38 @@
   }
 
   // Up to `limit` tags to suggest, best first, leaving out any in `exclude`
-  // (ignoring case).
-  function rankTags(record, exclude, limit) {
+  // (ignoring case). With a clip's `url` and `title`, tags used on the same
+  // site come first (most used there first), then tags that appear as words
+  // in the title (`-` and `_` count as spaces), then the rest by use.
+  function rankTags(record, exclude, limit, clip) {
     const recent = cleanRecent(record);
     const skip = new Set(
       (exclude || []).map(function (t) {
         return String(t).toLowerCase();
       })
     );
+    const host = hostname(clip && clip.url);
+    const title = wordsOf(clip && clip.title);
+    function onSite(tag) {
+      return (host && recent[tag].hosts[host]) || 0;
+    }
+    function inTitle(tag) {
+      const phrase = wordsOf(tag);
+      return phrase.trim() !== '' && title.indexOf(phrase) !== -1;
+    }
+    const use = byUse(recent);
     return Object.keys(recent)
       .filter(function (tag) {
         return !skip.has(tag.toLowerCase());
       })
-      .sort(byUse(recent))
+      .sort(function (a, b) {
+        return (
+          (onSite(a) ? 0 : 1) - (onSite(b) ? 0 : 1) ||
+          onSite(b) - onSite(a) ||
+          (inTitle(a) ? 0 : 1) - (inTitle(b) ? 0 : 1) ||
+          use(a, b)
+        );
+      })
       .slice(0, limit === undefined ? 8 : limit);
   }
 
