@@ -62,7 +62,7 @@ Shared links always lose their tracking parameters (`utm_*`, `fbclid`, `gclid`, 
 
 Everything runs on your phone. Magpie has no server, no analytics and no account, and nothing you clip is sent anywhere except to Obsidian on the same device. The only network requests are the ones that load the app itself.
 
-Magpie remembers the extra tags you use so it can suggest them next time. That list is stored in your browser on the phone, next to your settings, and **Forget recent tags** in Settings clears it.
+Magpie remembers the extra tags you use, and the sites (hostnames such as `youtube.com`) you used them on, so it can suggest the right ones next time. That list is stored in your browser on the phone, next to your settings, and **Forget recent tags** in Settings clears it.
 
 ## How it works
 

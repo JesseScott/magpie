@@ -313,15 +313,15 @@ test('recordTags counts each use and keeps the latest date', () => {
   let r = clip.recordTags(null, ['recipes', 'to-read'], '2026-10-01');
   r = clip.recordTags(r, ['#Recipes', ' ', 'bread baking'], '2026-10-02');
   assert.deepEqual(r, {
-    'to-read': { count: 1, last: '2026-10-01' },
-    Recipes: { count: 2, last: '2026-10-02' },
-    'bread-baking': { count: 1, last: '2026-10-02' },
+    'to-read': { count: 1, last: '2026-10-01', hosts: {} },
+    Recipes: { count: 2, last: '2026-10-02', hosts: {} },
+    'bread-baking': { count: 1, last: '2026-10-02', hosts: {} },
   });
 });
 
 test('recordTags does not change the record it was given', () => {
   const before = { recipes: { count: 1, last: '2026-10-01' } };
-  clip.recordTags(before, ['recipes'], '2026-10-02');
+  clip.recordTags(before, ['recipes'], '2026-10-02', 'https://example.com/');
   assert.deepEqual(before, { recipes: { count: 1, last: '2026-10-01' } });
 });
 
@@ -372,4 +372,64 @@ test('hashTags writes always-on tags as #tags, and nothing when blank', () => {
   assert.equal(clip.hashTags('clippings, magpie'), '#clippings #magpie');
   assert.equal(clip.hashTags(' #web clips ,'), '#web-clips');
   assert.equal(clip.hashTags(''), '');
+});
+
+test('recordTags counts tags per site, without www', () => {
+  let r = clip.recordTags(null, ['video'], '2026-10-01', 'https://www.youtube.com/watch?v=1');
+  r = clip.recordTags(r, ['Video'], '2026-10-02', 'https://youtube.com/watch?v=2');
+  r = clip.recordTags(r, ['video'], '2026-10-03', 'not a link');
+  assert.deepEqual(r, { video: { count: 3, last: '2026-10-03', hosts: { 'youtube.com': 2 } } });
+});
+
+test('recordTags keeps the ten sites a tag was used on most', () => {
+  const hosts = {};
+  for (let i = 0; i < 10; i++) hosts['site' + i + '.com'] = 2;
+  hosts['site0.com'] = 1;
+  const r = clip.recordTags({ news: { count: 11, last: '', hosts: hosts } }, ['news'], '', 'https://new.com/');
+  assert.equal(Object.keys(r.news.hosts).length, 10);
+  assert.equal(r.news.hosts['new.com'], 1);
+  assert.equal(r.news.hosts['site1.com'], 2);
+  assert.ok(!('site0.com' in r.news.hosts));
+});
+
+test('rankTags puts tags used on the same site first, ahead of more used ones', () => {
+  const r = {
+    recipes: { count: 9, last: '2026-10-05', hosts: { 'example.com': 9 } },
+    music: { count: 1, last: '2026-10-01', hosts: { 'youtube.com': 1 } },
+    video: { count: 2, last: '2026-10-01', hosts: { 'youtube.com': 2, 'vimeo.com': 1 } },
+  };
+  assert.deepEqual(clip.rankTags(r, [], 8, { url: 'https://www.youtube.com/watch?v=x' }), [
+    'video',
+    'music',
+    'recipes',
+  ]);
+  assert.deepEqual(clip.rankTags(r, [], 8, { url: 'https://other.org/' }), ['recipes', 'video', 'music']);
+});
+
+test('rankTags puts tags that appear as words in the title next', () => {
+  const r = {
+    'to-read': { count: 9, last: '', hosts: {} },
+    sourdough: { count: 1, last: '', hosts: {} },
+    'bread-baking': { count: 1, last: '', hosts: {} },
+    bake: { count: 1, last: '', hosts: {} },
+    news: { count: 1, last: '', hosts: { 'example.com': 1 } },
+  };
+  const ranked = clip.rankTags(r, [], 8, {
+    url: 'https://example.com/a',
+    title: 'Bread Baking: how to make SOURDOUGH (bakery tips)',
+  });
+  assert.deepEqual(ranked, ['news', 'bread-baking', 'sourdough', 'to-read', 'bake']);
+});
+
+test('rankTags reads records saved before sites were counted', () => {
+  const old = { recipes: { count: 2, last: '2026-10-01' }, video: { count: 1, last: '2026-10-02' } };
+  assert.deepEqual(clip.rankTags(old, [], 8, { url: 'https://youtube.com/', title: 'A video' }), [
+    'video',
+    'recipes',
+  ]);
+  assert.deepEqual(clip.recordTags(old, ['video'], '2026-10-03', 'https://youtube.com/').video, {
+    count: 2,
+    last: '2026-10-03',
+    hosts: { 'youtube.com': 1 },
+  });
 });

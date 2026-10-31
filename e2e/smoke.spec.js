@@ -403,3 +403,28 @@ test('Copy as Markdown still copies the note', async ({ page, context }) => {
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain('> Some selected words');
 });
+
+test('a tag used on a site comes first on the next share from that site', async ({ page }) => {
+  const share = (title, link) =>
+    './?title=' + encodeURIComponent(title) + '&text=' + encodeURIComponent(link);
+  await page.goto(share('Some recipe', 'https://example.com/a'));
+  await configure(page);
+  await page.fill('#tags', 'recipes');
+  await page.click('#save');
+  await openedLink(page);
+  for (const link of ['https://example.com/b', 'https://example.com/c']) {
+    await page.goto(share('Another recipe', link));
+    await page.fill('#tags', 'recipes');
+    await page.click('#save');
+  }
+  await page.goto(share('A clip', 'https://www.youtube.com/watch?v=1'));
+  await page.fill('#tags', 'video');
+  await page.click('#save');
+
+  await page.goto(share('Another clip', 'https://youtube.com/watch?v=2'));
+  await expect(page.locator('#tag-chips .chip')).toHaveText(['video', 'recipes']);
+  await page.goto(share('More bread', 'https://example.org/x'));
+  await expect(page.locator('#tag-chips .chip')).toHaveText(['recipes', 'video']);
+  await page.goto(share('Shooting video on a phone', 'https://example.org/y'));
+  await expect(page.locator('#tag-chips .chip')).toHaveText(['video', 'recipes']);
+});
