@@ -132,7 +132,6 @@ test('custom property names and an unticked link-in-body show up in the note', a
 test('always-on tags come first, then extras, without duplicates', async ({ page }) => {
   await page.goto(SHARE);
   await configure(page, { baseTag: 'clippings, magpie' });
-  await expect(page.locator('#base-tag')).toHaveText('clippings, magpie');
   await page.fill('#tags', 'extra, Magpie, to read');
   await page.click('#save');
 
@@ -354,4 +353,18 @@ test('Forget recent tags empties the chips', async ({ page }) => {
   await expect(page.locator('#tag-chips')).toBeHidden();
   await page.reload();
   await expect(page.locator('#tag-chips')).toBeHidden();
+});
+
+test('one line under the header shows the destination and always-on tags and opens Settings', async ({ page }) => {
+  await page.goto(SHARE);
+  await configure(page, { folder: 'Web/Clips', baseTag: 'clippings, magpie' });
+  await expect(page.locator('#summary')).toHaveText('test-vault / Web/Clips · #clippings #magpie');
+  await expect(page.getByText('Always tagged')).toHaveCount(0);
+
+  await page.click('#summary');
+  await expect(page.locator('#settings-view')).toBeVisible();
+  await expect(page.locator('#summary')).toBeHidden();
+  await fillSettings(page, { vault: '', folder: '', baseTag: '' });
+  await page.click('#settings-form button[type=submit]');
+  await expect(page.locator('#summary')).toHaveText('last-used vault');
 });

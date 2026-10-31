@@ -18,7 +18,7 @@
         <h1>Magpie</h1>
         <button type="button" id="open-settings" class="link">Settings</button>
       </div>
-      <p id="dest" class="quiet"></p>
+      <button type="button" id="summary" class="summary"><span id="dest"></span><span id="base-tags"></span></button>
     </header>
 
     <section id="settings-view" hidden>
@@ -105,7 +105,6 @@
         <label for="tags">Extra tags <span class="quiet">(comma-separated)</span></label>
         <input id="tags" name="tags" type="text" placeholder="recipes, to-read" enterkeyhint="next">
         <div id="tag-chips" class="chips" aria-label="Recent tags" hidden></div>
-        <p id="base-tag-line" class="quiet small">Always tagged: <code id="base-tag"></code>.</p>
 
         <label for="note">Note</label>
         <textarea id="note" name="note" rows="2" placeholder="Optional"></textarea>

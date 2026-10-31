@@ -228,6 +228,21 @@ button.chip[aria-pressed='true'] {
   font-size: 0.875rem;
 }
 
+/* Where clips go and the always-on tags, tapped to open Settings. */
+button.summary {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--quiet);
+  background: none;
+  border: 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
 label.check {
   display: flex;
   align-items: center;

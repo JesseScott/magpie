@@ -360,3 +360,16 @@ test('rankTags shows at most eight by default and ignores unreadable data', () =
   assert.deepEqual(clip.rankTags('junk'), []);
   assert.deepEqual(clip.rankTags(['a']), []);
 });
+
+test('destination reads vault / folder, with a blank vault as the last-used one', () => {
+  assert.equal(clip.destination({ vault: 'v', folder: 'Web/Clips' }), 'v / Web/Clips');
+  assert.equal(clip.destination({ vault: 'v', folder: '' }), 'v');
+  assert.equal(clip.destination({ vault: '', folder: 'Clips' }), 'last-used vault / Clips');
+  assert.equal(clip.destination({ vault: '', folder: '' }), 'last-used vault');
+});
+
+test('hashTags writes always-on tags as #tags, and nothing when blank', () => {
+  assert.equal(clip.hashTags('clippings, magpie'), '#clippings #magpie');
+  assert.equal(clip.hashTags(' #web clips ,'), '#web-clips');
+  assert.equal(clip.hashTags(''), '');
+});

@@ -127,13 +127,13 @@
     $('settings-view').hidden = name !== 'settings';
     $('clip-view').hidden = name !== 'clip';
     $('open-settings').hidden = name === 'settings';
+    $('summary').hidden = name === 'settings';
   }
 
   function renderDestination() {
-    var vault = settings.vault || 'last-used vault';
-    $('dest').textContent = settings.folder ? vault + ' / ' + settings.folder : vault;
-    $('base-tag').textContent = settings.baseTag;
-    $('base-tag-line').hidden = !settings.baseTag;
+    var tags = clip.hashTags(settings.baseTag);
+    $('dest').textContent = clip.destination(settings);
+    $('base-tags').textContent = tags ? ' · ' + tags : '';
   }
 
   function fillSettingsForm(s) {
@@ -331,6 +331,7 @@
     $('copy').addEventListener('click', copyNote);
     $('add-quote').addEventListener('click', addQuote);
     $('open-settings').addEventListener('click', openSettings);
+    $('summary').addEventListener('click', openSettings);
     $('cancel-settings').addEventListener('click', closeSettings);
     $('reset-settings').addEventListener('click', resetSettings);
     $('settings-form').addEventListener('submit', saveSettingsForm);
