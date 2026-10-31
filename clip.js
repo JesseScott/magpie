@@ -297,6 +297,21 @@
     return cleanTagList(String(baseTags || '') + ',' + String(input || ''));
   }
 
+  // The quiet line under the header: where clips go, then the always-on
+  // tags. A blank vault means whichever vault Obsidian opened last.
+  function destination(settings) {
+    const vault = settings.vault || 'last-used vault';
+    return settings.folder ? vault + ' / ' + settings.folder : vault;
+  }
+
+  function hashTags(tagList) {
+    return cleanTagList(tagList)
+      .map(function (t) {
+        return '#' + t;
+      })
+      .join(' ');
+  }
+
   // ---- Recent tags ------------------------------------------------------
 
   // Extra tags used before, kept on the device as
@@ -456,6 +471,8 @@
     cleanTag: cleanTag,
     cleanTagList: cleanTagList,
     parseTags: parseTags,
+    destination: destination,
+    hashTags: hashTags,
     recordTags: recordTags,
     rankTags: rankTags,
     cleanFolder: cleanFolder,
