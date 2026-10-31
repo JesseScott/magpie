@@ -368,3 +368,38 @@ test('one line under the header shows the destination and always-on tags and ope
   await page.click('#settings-form button[type=submit]');
   await expect(page.locator('#summary')).toHaveText('last-used vault');
 });
+
+for (const [kind, url] of [
+  ['a page share', './?title=' + encodeURIComponent('A page') + '&text=' + encodeURIComponent('https://example.com/a')],
+  ['a selection share', SHARE],
+]) {
+  test(`Save is on screen without scrolling for ${kind}`, async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 851 });
+    await page.goto(url);
+    await configure(page, { baseTag: 'clippings, magpie' });
+    await expect(page.locator('#save')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('#copy')).toBeInViewport({ ratio: 1 });
+  });
+}
+
+test('the last field scrolls clear of the Save bar', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 600 });
+  await page.goto(SHARE);
+  await configure(page);
+  await page.locator('#note').fill('one\ntwo\nthree\nfour\nfive');
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const note = await page.locator('#note').boundingBox();
+  const bar = await page.locator('.action-bar').boundingBox();
+  expect(note.y + note.height).toBeLessThanOrEqual(bar.y);
+  await expect(page.locator('#save')).toBeInViewport({ ratio: 1 });
+});
+
+test('Copy as Markdown still copies the note', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto(SHARE);
+  await configure(page);
+  await page.click('#copy');
+  await expect(page.locator('#status')).toHaveText('Copied. Paste it into a new note.');
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain('> Some selected words');
+});

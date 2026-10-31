@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Magpie</title>
   <meta name="description" content="Clip pages from Chrome on Android into an Obsidian vault.">
   <meta name="theme-color" content="#7c3aed">
@@ -109,9 +109,13 @@
         <label for="note">Note</label>
         <textarea id="note" name="note" rows="2" placeholder="Optional"></textarea>
 
-        <button type="submit" id="save">Save to Obsidian</button>
-        <button type="button" id="copy" class="secondary">Copy note as Markdown</button>
-        <p id="status" role="status" aria-live="polite"></p>
+        <div class="action-bar">
+          <button type="submit" id="save">Save to Obsidian</button>
+          <div class="action-row">
+            <p id="status" role="status" aria-live="polite"></p>
+            <button type="button" id="copy" class="link">Copy as Markdown</button>
+          </div>
+        </div>
       </form>
 
       <footer class="install-hint quiet small">

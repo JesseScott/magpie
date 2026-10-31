@@ -133,9 +133,34 @@ button:active {
   opacity: 0.85;
 }
 
+/* Save stays at the bottom of the screen while the form scrolls. It sits
+   in the form's flow, so the last field can always scroll clear of it.
+   With interactive-widget=resizes-content in the viewport tag, the bar
+   rises above the keyboard on Android. */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  margin: 16px -16px 0;
+  padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+
+.action-bar #save {
+  margin-top: 0;
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 #status {
+  flex: 1;
   min-height: 1.45em;
-  margin: 12px 0 0;
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 #status.error {
@@ -307,4 +332,8 @@ label.check input {
 .version {
   margin-top: 24px;
   text-align: center;
+}
+
+.action-row #copy {
+  flex: none;
 }
