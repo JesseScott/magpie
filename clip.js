@@ -339,12 +339,29 @@
     return out;
   }
 
+  // Mobile and short-link hosts count as the site itself, so a YouTube
+  // video shared from Chrome (m.youtube.com) and from the app (youtube.com
+  // or youtu.be) match.
+  const SITE_ALIASES = { 'youtu.be': 'youtube.com', 'redd.it': 'reddit.com' };
+
+  function siteKey(host) {
+    const h = String(host || '')
+      .toLowerCase()
+      .replace(/^(www|m|mobile)\./, '');
+    return SITE_ALIASES[h] || h;
+  }
+
+  function siteOf(url) {
+    return siteKey(hostname(url));
+  }
+
   function cleanHosts(hosts) {
     const out = {};
     if (!hosts || typeof hosts !== 'object' || Array.isArray(hosts)) return out;
     Object.keys(hosts).forEach(function (host) {
       const n = Math.floor(Number(hosts[host]));
-      if (host && n > 0) out[host] = n;
+      const site = siteKey(host);
+      if (site && n > 0) out[site] = (out[site] || 0) + n;
     });
     return out;
   }
@@ -386,7 +403,7 @@
   // least used tags are dropped.
   function recordTags(record, tags, date, url) {
     const next = cleanRecent(record);
-    const host = hostname(url);
+    const host = siteOf(url);
     cleanTagList((tags || []).join(',')).forEach(function (tag) {
       let count = 0;
       const hosts = {};
@@ -419,7 +436,7 @@
         return String(t).toLowerCase();
       })
     );
-    const host = hostname(clip && clip.url);
+    const host = siteOf(clip && clip.url);
     const title = wordsOf(clip && clip.title);
     function onSite(tag) {
       return (host && recent[tag].hosts[host]) || 0;
