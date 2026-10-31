@@ -60,6 +60,16 @@
         <p id="settings-status" role="status" aria-live="polite"></p>
       </form>
 
+      <div class="recent-tags">
+        <h2>Recent tags</h2>
+        <p class="quiet small">
+          Magpie remembers the extra tags you use and suggests them under the tags field. They
+          stay on this device.
+        </p>
+        <button type="button" id="forget-tags" class="secondary">Forget recent tags</button>
+        <p id="forget-status" role="status" aria-live="polite"></p>
+      </div>
+
       <details id="raw-share" class="raw-share">
         <summary>Last share received</summary>
         <p class="quiet small">
@@ -94,6 +104,7 @@
 
         <label for="tags">Extra tags <span class="quiet">(comma-separated)</span></label>
         <input id="tags" name="tags" type="text" placeholder="recipes, to-read" enterkeyhint="next">
+        <div id="tag-chips" class="chips" aria-label="Recent tags" hidden></div>
         <p id="base-tag-line" class="quiet small">Always tagged: <code id="base-tag"></code>.</p>
 
         <label for="note">Note</label>

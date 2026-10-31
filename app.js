@@ -4,6 +4,7 @@
   var clip = window.MagpieClip;
 
   var STORE_KEY = 'magpie.settings.v1';
+  var RECENT_KEY = 'magpie.recent.v1';
   var MAX_URI_LENGTH = 8000;
 
   var settings = clip.normalizeSettings(null);
@@ -37,6 +38,87 @@
     } catch (e) {
       return false;
     }
+  }
+
+  // ---- Recent tags ------------------------------------------------------
+
+  // Kept under its own key so the settings shape doesn't change. Without
+  // storage there are simply no chips.
+  function loadRecent() {
+    try {
+      return JSON.parse(window.localStorage.getItem(RECENT_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function rememberTags() {
+    var base = clip.cleanTagList(settings.baseTag);
+    var extras = clip.cleanTagList($('tags').value).filter(function (t) {
+      return !hasTag(base, t);
+    });
+    if (!extras.length) return;
+    try {
+      var next = clip.recordTags(loadRecent(), extras, clip.localDate());
+      window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    } catch (e) {
+      /* Suggestions are a convenience; saving the clip matters more. */
+    }
+  }
+
+  function forgetTags() {
+    try {
+      window.localStorage.removeItem(RECENT_KEY);
+    } catch (e) {
+      /* Nothing stored to forget. */
+    }
+    renderChips();
+    setStatus('forget-status', 'Recent tags forgotten.');
+  }
+
+  function hasTag(list, tag) {
+    return list.some(function (t) {
+      return t.toLowerCase() === tag.toLowerCase();
+    });
+  }
+
+  function renderChips() {
+    var box = $('tag-chips');
+    var tags = clip.rankTags(loadRecent(), clip.cleanTagList(settings.baseTag));
+    box.textContent = '';
+    tags.forEach(function (tag) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = tag;
+      chip.dataset.tag = tag;
+      box.appendChild(chip);
+    });
+    box.hidden = !tags.length;
+    markChips();
+  }
+
+  // A chip shows as pressed while its tag is in the field.
+  function markChips() {
+    var typed = clip.cleanTagList($('tags').value);
+    var chips = $('tag-chips').querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].setAttribute('aria-pressed', hasTag(typed, chips[i].dataset.tag) ? 'true' : 'false');
+    }
+  }
+
+  function toggleChip(event) {
+    var chip = event.target.closest('.chip');
+    if (!chip) return;
+    var tag = chip.dataset.tag;
+    var typed = clip.cleanTagList($('tags').value);
+    var next = hasTag(typed, tag)
+      ? typed.filter(function (t) {
+          return t.toLowerCase() !== tag.toLowerCase();
+        })
+      : typed.concat(tag);
+    $('tags').value = next.join(', ');
+    markChips();
   }
 
   // ---- Views ------------------------------------------------------------
@@ -85,6 +167,7 @@
   function openSettings() {
     fillSettingsForm(settings);
     setStatus('settings-status', '');
+    setStatus('forget-status', '');
     $('welcome').hidden = !firstRun;
     $('cancel-settings').hidden = firstRun;
     showView('settings');
@@ -93,6 +176,7 @@
 
   function closeSettings() {
     renderDestination();
+    renderChips();
     showView('clip');
   }
 
@@ -147,6 +231,7 @@
 
   function save(event) {
     event.preventDefault();
+    rememberTags();
     var c = currentClip();
     var note = clip.buildNote(c, settings);
     var result = clip.buildUri({
@@ -174,6 +259,7 @@
   }
 
   function copyNote() {
+    rememberTags();
     copyText(clip.buildNote(currentClip(), settings)).then(
       function () {
         setStatus('status', 'Copied. Paste it into a new note.');
@@ -249,11 +335,15 @@
     $('reset-settings').addEventListener('click', resetSettings);
     $('settings-form').addEventListener('submit', saveSettingsForm);
     $('copy-raw-share').addEventListener('click', copyRawShare);
+    $('tag-chips').addEventListener('click', toggleChip);
+    $('tags').addEventListener('input', markChips);
+    $('forget-tags').addEventListener('click', forgetTags);
 
     // First run: ask where clips go before anything else. A page that was
     // just shared stays filled in behind the settings screen.
     firstRun = !loadSettings();
     renderDestination();
+    renderChips();
     if (firstRun) openSettings();
     else showView('clip');
 

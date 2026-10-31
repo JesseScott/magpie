@@ -311,3 +311,47 @@ test('the version on screen matches version.js', async ({ page }) => {
   await page.goto('./');
   await expect(page.locator('.app-version').first()).toHaveText('v' + version);
 });
+
+test('a tag used once shows as a chip next time and toggles in the field', async ({ page }) => {
+  await page.goto(SHARE);
+  await configure(page, { baseTag: 'clippings' });
+  await expect(page.locator('#tag-chips')).toBeHidden();
+  await page.fill('#tags', 'Recipes, clippings');
+  await page.click('#save');
+  await openedLink(page);
+
+  await page.goto('./?title=' + encodeURIComponent('Another page') + '&text=' + encodeURIComponent('https://example.com/b'));
+  const chips = page.locator('#tag-chips .chip');
+  await expect(chips).toHaveText(['Recipes']);
+  await expect(chips.first()).toHaveAttribute('aria-pressed', 'false');
+
+  await page.fill('#tags', 'to-read');
+  await chips.first().click();
+  await expect(page.locator('#tags')).toHaveValue('to-read, Recipes');
+  await expect(chips.first()).toHaveAttribute('aria-pressed', 'true');
+  await chips.first().click();
+  await expect(page.locator('#tags')).toHaveValue('to-read');
+  await expect(chips.first()).toHaveAttribute('aria-pressed', 'false');
+
+  await chips.first().click();
+  await page.click('#save');
+  const { note } = await openedLink(page);
+  expect(note).toContain('tags:\n  - clippings\n  - to-read\n  - Recipes\n');
+});
+
+test('Forget recent tags empties the chips', async ({ page }) => {
+  await page.goto(SHARE);
+  await configure(page);
+  await page.fill('#tags', 'recipes');
+  await page.click('#copy');
+  await page.reload();
+  await expect(page.locator('#tag-chips .chip')).toHaveText(['recipes']);
+
+  await page.click('#open-settings');
+  await page.click('#forget-tags');
+  await expect(page.locator('#forget-status')).toHaveText('Recent tags forgotten.');
+  await page.click('#cancel-settings');
+  await expect(page.locator('#tag-chips')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#tag-chips')).toBeHidden();
+});

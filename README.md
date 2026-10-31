@@ -62,6 +62,8 @@ Shared links always lose their tracking parameters (`utm_*`, `fbclid`, `gclid`, 
 
 Everything runs on your phone. Magpie has no server, no analytics and no account, and nothing you clip is sent anywhere except to Obsidian on the same device. The only network requests are the ones that load the app itself.
 
+Magpie remembers the extra tags you use so it can suggest them next time. That list is stored in your browser on the phone, next to your settings, and **Forget recent tags** in Settings clears it.
+
 ## How it works
 
 The share target in `manifest.webmanifest` receives `title`, `text` and `url`. `clip.js` builds the note and an `obsidian://new` link, and `app.js` opens it. Short notes travel inside the link. Notes too long for a link are copied to the clipboard and created with `obsidian://new?...&clipboard`.
