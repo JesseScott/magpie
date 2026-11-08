@@ -433,3 +433,17 @@ test('rankTags reads records saved before sites were counted', () => {
     hosts: { 'youtube.com': 1 },
   });
 });
+
+test('recordTags and rankTags treat mobile and short-link hosts as the same site', () => {
+  let r = clip.recordTags(null, ['video'], '2026-10-01', 'https://m.youtube.com/watch?v=1');
+  r = clip.recordTags(r, ['video'], '2026-10-02', 'https://youtu.be/2');
+  r = clip.recordTags(r, ['news'], '2026-10-02', 'https://example.com/');
+  r = clip.recordTags(r, ['news'], '2026-10-03', 'https://example.com/b');
+  r = clip.recordTags(r, ['news'], '2026-10-03', 'https://example.com/c');
+  assert.deepEqual(r.video.hosts, { 'youtube.com': 2 });
+  for (const url of ['https://youtube.com/watch?v=3', 'https://www.youtube.com/watch?v=3', 'https://youtu.be/3']) {
+    assert.deepEqual(clip.rankTags(r, [], 8, { url: url }), ['video', 'news'], url);
+  }
+  const saved = { video: { count: 1, last: '', hosts: { 'm.youtube.com': 1, 'youtube.com': 2 } } };
+  assert.deepEqual(clip.recordTags(saved, [], '', '').video.hosts, { 'youtube.com': 3 });
+});
